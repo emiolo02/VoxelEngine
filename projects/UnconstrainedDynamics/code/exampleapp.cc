@@ -49,7 +49,7 @@ ExampleApp::Open()
 {
 	App::Open();
 	this->window = new Display::Window;
-	this->window->SetTitle("Ray intersection");
+	this->window->SetTitle("Example");
 	this->window->SetSize(1920, 1080);
 	window->GetSize(this->windowWidth, this->windowHeight);
 
@@ -110,10 +110,10 @@ ExampleApp::Run()
 	inspector->AddFloat("Impulse force", 2);
 	
 	//// Generate shaders
-	programs[PROG_SKYBOX] = ShaderResource::Instance()->CreateProgram("Shaders/SkyBox.vs", "Shaders/Skybox.fs");
-	programs[PROG_GBUFFER] = ShaderResource::Instance()->CreateProgram("Shaders/GBuffer.vs", "Shaders/GBuffer.fs");
-	programs[PROG_SCREENQUAD] = ShaderResource::Instance()->CreateProgram("Shaders/ScreenQuad.vs", "Shaders/ScreenQuad.fs");
-	programs[PROG_BASIC] = ShaderResource::Instance()->CreateProgram("Shaders/BasicShader.vs", "Shaders/BasicShader.fs");
+	programs[PROG_SKYBOX] = ShaderResource::Instance()->CreateProgram("../Shaders/SkyBox.vs", "../Shaders/Skybox.fs");
+	programs[PROG_GBUFFER] = ShaderResource::Instance()->CreateProgram("../Shaders/GBuffer.vs", "../Shaders/GBuffer.fs");
+	programs[PROG_SCREENQUAD] = ShaderResource::Instance()->CreateProgram("../Shaders/ScreenQuad.vs", "../Shaders/ScreenQuad.fs");
+	programs[PROG_BASIC] = ShaderResource::Instance()->CreateProgram("../Shaders/BasicShader.vs", "../Shaders/BasicShader.fs");
 
 	//// Set up G buffer
 	frameBuffers[BUFFER_GBUFFER].InitGBuffer(windowWidth, windowHeight);
@@ -136,21 +136,26 @@ ExampleApp::Run()
 
 	//Object sponza("Assets/Sponza/Sponza.gltf", vec3(), vec3(0.05, 0.05, 0.05));
 
-	Object cube0("Assets/Cube/Cube.gltf", vec3(0, 0, 0), vec3(10, 0.5, 10), vec3(), 1, true);
-	cube0.SetName("Cube0");
+	/*Object cube0("Assets/Cube/Cube.gltf", vec3(0, 0, 0), vec3(100, 0.5, 100), vec3(), 1, true);
+	cube0.SetName("Floor");*/
 
-	//Object sphere("Assets/sphere.obj", vec3(1, 2.5, 0));
+	////Object sphere("Assets/sphere.obj", vec3(1, 2.5, 0));
 
-	// BarramundiFish
-	/*Object fish("Assets/BarramundiFish/BarramundiFish.gltf", vec3(0, 1, 0));
-	fish.scale = vec3(2, 2, 2);*/
+	//// BarramundiFish
+	///*Object fish("Assets/BarramundiFish/BarramundiFish.gltf", vec3(0, 1, 0));
+	//fish.scale = vec3(2, 2, 2);*/
 
-	/*Object cube1("Assets/Cube/Cube.gltf", vec3(2, 2.5, 2), vec3(1), vec3(), 1000);
-	cube1.SetName("Cube1");*/
-	Object cube2("Assets/Cube/Cubawsfde.gltf", vec3(-2, 1.5, 0));
-	cube2.SetName("Cube2");
-	Object cube3("Assets/Cube/Cube.gltf", vec3(-2, 3.5, 0));
-	cube3.SetName("Cube3");
+	///*Object cube1("Assets/Cube/Cube.gltf", vec3(2, 2.5, 2), vec3(1), vec3(), 1000);
+	//cube1.SetName("Cube1");*/
+	//Object cube2("Assets/Cube/Cubawsfde.gltf", vec3(-2, 1.5, 0));
+	//cube2.SetName("Cube2");
+	//Object cube3("Assets/Cube/Cube.gltf", vec3(-2, 3.5, 0));
+	//cube3.SetName("Cube3");
+
+	Object toyCar("Assets/ToyCar.glb", vec3(0, 50, 0), vec3(0.01f));
+
+
+	//Object helmet("Assets/DamagedHelmet.gltf", vec3(5, 2, 0));
 
 	//Object cube2("Assets/cube.obj", vec3(0, 5, 0));
 

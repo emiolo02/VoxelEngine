@@ -175,7 +175,7 @@ MeshResource::LoadModel(std::string path)
 
 	if (fileExt == "obj")
 		model = LoadOBJ(path);
-	else if (fileExt == "gltf")
+	else if (fileExt == "gltf" || fileExt == "glb")
 		model = LoadGLTF(path);
 	else
 	{
@@ -187,18 +187,6 @@ MeshResource::LoadModel(std::string path)
 	loadedModels[path] = model;
 
 	return model;
-}
-
-void split(std::string& str, char separator, std::vector<std::string>& out)
-{
-	// create a stream from the string  
-	std::stringstream s(str);
-
-	std::string s2;
-	while (getline(s, s2, separator))
-	{
-		out.push_back(s2); // store the string in s2  
-	}
 }
 
 std::string 

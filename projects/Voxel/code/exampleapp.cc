@@ -20,6 +20,7 @@
 #include <array>
 
 #include "PerlinNoise.h"
+#include "happly.h"
 
 #include <execution>
 
@@ -171,8 +172,8 @@ ExampleApp::Run()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
 
-	programs[PROG_SCREENQUAD] = ShaderResource::Instance()->CreateProgram("Shaders/ScreenQuad.vs", "Shaders/ScreenQuadComp.fs");
-	programs[PROG_COMPUTE] = ShaderResource::Instance()->CreateComputeShader("Shaders/VoxelTraverse.comp");
+	programs[PROG_SCREENQUAD] = ShaderResource::Instance()->CreateProgram("../Shaders/ScreenQuad.vs", "../Shaders/ScreenQuadComp.fs");
+	programs[PROG_COMPUTE] = ShaderResource::Instance()->CreateComputeShader("../Shaders/VoxelTraverse.comp");
 	renderQuad.Init();
 
 	Camera cam;
@@ -182,7 +183,9 @@ ExampleApp::Run()
 	cam.Perspective(45, windowWidth, windowHeight);
 	Camera::AddCamera(&cam);
 
-	grid = new VoxelGrid(400, 400, 400, 0.1f, vec3(-20, -20, -20));
+	happly::PLYData plyTest("Assets/xyzrgb_dragon.ply");
+
+	grid = new VoxelGrid(1000, 1000, 1000, 0.1f, vec3(-20, -20, -20));
 	grid->GenerateProcedural();
 
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -240,7 +243,7 @@ ExampleApp::Run()
 			Physics::Ray r(cam.position, Physics::CastFromCam(manager->mouse.nx, manager->mouse.ny, cam));
 
 			grid->RayTraverse(r);
-			//grid->FillPath(grid->GetRayPath(r));
+			grid->FillPath(grid->GetRayPath(r));
 		}
 
 		

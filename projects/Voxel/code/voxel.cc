@@ -42,20 +42,33 @@ void VoxelGrid::Upload(GLuint program)
 	UniformInt("Grid.depth", m_depth, program);
 
 	//glUniform4fv()
-	std::vector<vec4> temp(m_voxels.size());
-	for (int i = 0; i < m_voxels.size(); i++)
-	{
-		if (m_voxels[i].occupied)
-			temp[i] = vec4(m_voxels[i].color.ToVec(), 1.0f);
-		else
-			temp[i] = vec4(0.0f);
-	}
-	//glUniform4fv(glGetUniformLocation(program, "voxels"), temp.size(), &temp[0][0]);
+	//std::vector<vec4> temp(m_voxels.size());
+	//for (int i = 0; i < m_voxels.size(); i++)
+	//{
+	//	if (m_voxels[i].occupied)
+	//		temp[i] = vec4(m_voxels[i].color.ToVec(), 1.0f);
+	//	else
+	//		temp[i] = vec4(0.0f);
+	//}
+	////glUniform4fv(glGetUniformLocation(program, "voxels"), temp.size(), &temp[0][0]);
 
+
+	//// @TODO - make a SSBO class
+	//glGenBuffers(1, &ssbo);
+	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	//glBufferData(GL_SHADER_STORAGE_BUFFER, temp.size() * sizeof(vec4), temp.data(), GL_DYNAMIC_COPY);
+	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
+	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	std::vector<int> temp(m_voxels.size());
+	for (int i = 0; i < m_voxels.size(); i++)
+		temp[i] = m_voxels[i].color.ToInt() + m_voxels[i].occupied;
+
+	// @TODO - make a SSBO class
 	glGenBuffers(1, &ssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, temp.size() * sizeof(vec4), temp.data(), GL_DYNAMIC_COPY);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, temp.size() * sizeof(int), temp.data(), GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	computeProgram = program;

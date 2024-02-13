@@ -309,11 +309,11 @@ namespace Debug
 	void Init()
 	{
 		lineProgram = ShaderResource::Instance()->CreateProgram(
-			"Shaders/LineDraw.vs",
-			"Shaders/LineDraw.fs");
+			"../Shaders/LineDraw.vs",
+			"../Shaders/LineDraw.fs");
 		meshProgram = ShaderResource::Instance()->CreateProgram(
-			"Shaders/BasicShader.vs",
-			"Shaders/BasicShader.fs");
+			"../Shaders/BasicShader.vs",
+			"../Shaders/BasicShader.fs");
 
 		InitLine();
 		InitBox();

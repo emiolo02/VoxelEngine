@@ -4,11 +4,22 @@
 
 uint32_t GLTFinfo::numImg;
 
+
 std::shared_ptr<Model>
 GLTFinfo::LoadGLTF(std::string path)
 {
+    
+    std::vector<std::string> out;
+    split(path, '.', out);
 
-    fx::gltf::Document doc = fx::gltf::LoadFromText(path);
+    fx::gltf::Document doc;
+    if (out.back() == "gltf")
+        doc = fx::gltf::LoadFromText(path);
+    else if (out.back() == "glb")
+        doc = fx::gltf::LoadFromBinary(path);
+    else
+        assert(false); //what
+
 
     // Load texture information
     std::vector<ImageInfo> imageInfos;
@@ -16,21 +27,36 @@ GLTFinfo::LoadGLTF(std::string path)
     for (auto& image : doc.images)
     {
         ImageInfo imInfo;
-
+        
         if (!image.uri.empty() && !image.IsEmbeddedResource())
         {
             imInfo.FilePath = (fx::gltf::detail::GetDocumentRootPath(path) / image.uri).string();
             imInfo.name = image.uri;
             imageInfos.push_back(imInfo);
         }
-        else
+        else if (image.IsEmbeddedResource())
         {
-            numImg++;
             std::vector<uint8_t> embeddedData;
             image.MaterializeData(embeddedData);
             
             imInfo.name = "embeddedImage_" + std::to_string(numImg);
+            numImg++;
             imInfo.BinaryData = embeddedData;
+            imInfo.isBinary = true;
+            imageInfos.push_back(imInfo);
+        }
+        else
+        {
+            fx::gltf::BufferView const& bufferView = doc.bufferViews[image.bufferView];
+            fx::gltf::Buffer const& buffer = doc.buffers[bufferView.buffer];
+
+            imInfo.name = "embeddedImage_" + std::to_string(numImg);
+            numImg++;
+
+            for (int i = bufferView.byteOffset; i < bufferView.byteOffset + bufferView.byteLength; i++)
+            {
+                imInfo.BinaryData.push_back(buffer.data[i]);
+            }
             imInfo.isBinary = true;
             imageInfos.push_back(imInfo);
         }
@@ -184,8 +210,17 @@ GLTFinfo::RawToVertex(PrimitiveBuffer primBuffer)
     // Convert raw byte buffers to vertex information
     Primitive prim;
 
-    for (uint32 i = 0; i < primBuffer.indexBuffer.TotalSize / 2; i++)
-        prim.indices.push_back((primBuffer.indexBuffer.Data[i * 2 + 1] << 8) | primBuffer.indexBuffer.Data[i * 2]);
+    for (uint32 i = 0; i < primBuffer.indexBuffer.TotalSize; i += primBuffer.indexBuffer.DataStride)
+    {
+        std::vector<uint8> binData;
+        for (int j = 0; j < primBuffer.indexBuffer.DataStride; j++)
+            binData.push_back(primBuffer.indexBuffer.Data[i + j]);
+
+        uint32 index = 0;
+        std::memcpy(&index, binData.data(), primBuffer.indexBuffer.DataStride);
+        prim.indices.push_back(index);
+        //prim.indices.push_back((primBuffer.indexBuffer.Data[i * 2 + 1] << 8) | primBuffer.indexBuffer.Data[i * 2]);
+    }
 
     std::vector<vec3> positions;
     std::vector<vec3> normals;
@@ -385,5 +420,5 @@ GLTFinfo::GetData(fx::gltf::Document const& doc, fx::gltf::Accessor const& acces
     fx::gltf::Buffer const& buffer = doc.buffers[bufferView.buffer];
 
     const uint32_t dataTypeSize = CalculateDataTypeSize(accessor);
-    return BufferInfo{ &accessor, &buffer.data[static_cast<uint64_t>(bufferView.byteOffset) + accessor.byteOffset], dataTypeSize, accessor.count * dataTypeSize };
+    return BufferInfo{ &accessor, &buffer.data[(uint64_t)bufferView.byteOffset + accessor.byteOffset], dataTypeSize, accessor.count * dataTypeSize };
 }

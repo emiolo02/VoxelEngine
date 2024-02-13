@@ -47,11 +47,6 @@ public:
 
 	int resolvedCollisions = 0;
 private:
-	
-
-	// Used for limiting the physics update frequency
-	uint8 counter = 0;
-
 	static PhysicsWorld* instance;
 	PhysicsWorld() {}
 

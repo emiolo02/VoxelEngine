@@ -164,7 +164,6 @@ namespace Physics
 			-(1 + restitutionCoefficient) * relativeVelocity
 			/ (effectiveMassA + effectiveMassB);
 
-		std::cout << force << '\n';
 		Debug::DrawLine(pointA, pointA + collision.normal * force, vec4(0, 1, 0, 1), 5);
 		Debug::DrawLine(pointB, pointB - collision.normal * force, vec4(0, 1, 0, 1), 5);
 

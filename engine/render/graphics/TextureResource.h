@@ -76,6 +76,8 @@ public:
 		data = TextureData();
 	}
 
+	void Delete() { glDeleteTextures(1, &data.id); }
+
 	void Bind()
 	{
 		if (data.target == GL_TEXTURE_2D)

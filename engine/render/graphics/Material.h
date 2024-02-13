@@ -9,6 +9,8 @@ class Material
 public:
 	Material() {}
 
+	~Material() { for (auto& texture : textures) texture.Delete(); }
+
 	virtual void Apply(GLuint program) = 0;
 
 	void AddTexture(Texture const& tex);

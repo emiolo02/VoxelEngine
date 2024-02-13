@@ -69,11 +69,6 @@ PhysicsWorld* PhysicsWorld::Instance()
 
 void PhysicsWorld::Update(float dt)
 {
-	counter++;
-	/*if (counter % 10 != 0)
-		return;*/
-	counter = 0;
-
 	Physics::FindCollisions(rigidBodies, collisions);
 
 	while (!collisions.empty())

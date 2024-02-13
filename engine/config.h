@@ -16,6 +16,9 @@
 #include <xmmintrin.h>
 #include <assert.h>
 #include <memory.h>
+#include <string>
+#include <vector>
+#include <sstream>
 
 //#define GLM_FORCE_SSE42 // or GLM_FORCE_SSE42 if your processor supports it
 //#define GLM_FORCE_ALIGNED
@@ -88,4 +91,17 @@ inline bool
 SameDirection(vec3 const& a, vec3 const& b)
 {
 	return glm::dot(a, b) > 0;
+}
+
+inline void 
+split(std::string& str, char separator, std::vector<std::string>& out)
+{
+	// create a stream from the string  
+	std::stringstream s(str);
+
+	std::string s2;
+	while (getline(s, s2, separator))
+	{
+		out.push_back(s2); // store the string in s2  
+	}
 }

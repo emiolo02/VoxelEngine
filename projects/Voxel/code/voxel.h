@@ -34,6 +34,18 @@ struct Color
 
 		return ret;
 	}
+
+	int ToInt()
+	{
+		int ret = 0;
+		for (int i = 0; i < 3; ++i)
+		{
+			ret += v[i];
+			ret <<= 8;
+		}
+		
+		return ret;
+	}
 };
 
 struct VoxelData

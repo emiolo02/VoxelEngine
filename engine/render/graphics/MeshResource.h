@@ -29,5 +29,3 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Model>> loadedModels;
 	MeshResource() {}
 };
-
-inline void split(std::string& str, char separator, std::vector<std::string>& out);
