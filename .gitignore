@@ -1,0 +1,13 @@
+.vs/
+out/
+build/
+bin/
+!bin/shaders
+
+.idea/
+.cache/
+cmake-build-debug/
+cmake-build-minsizerel/
+cmake-build-release/
+cmake-build-relwithdebinfo/
+CMakeSettings.json
