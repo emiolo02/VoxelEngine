@@ -1,0 +1,89 @@
+#version 460 core
+
+#include "rt.glsl"
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout (rgba32f, binding = 0) uniform image2D screen;
+
+uniform vec2 u_Resolution;
+
+uniform mat4 u_InvProjection;
+uniform mat4 u_InvView;
+uniform vec3 u_CameraPosition;
+
+layout (binding = 1, std430) readonly buffer ssbo1
+{
+    uint Voxels[];
+};
+
+uniform vec3 u_GridMinBounds;
+uniform vec3 u_GridMaxBounds;
+uniform int u_GridXSize;
+uniform int u_GridYSize;
+uniform int u_GridZSize;
+uniform float u_VoxelSize;
+
+uniform bool u_ShowSteps;
+uniform bool u_ShowNormals;
+
+Ray ray;
+
+vec4
+Traverse(out vec3 normal, out uint steps) {
+    float tNear, tFar;
+    steps = 0;
+    normal = vec3(0.0);
+    if (!IntersectAABB(ray, tNear, tFar, u_GridMinBounds + CORRECTION, u_GridMaxBounds - CORRECTION)) {
+        return vec4(0.1);
+    }
+
+
+    vec3 rayStart = ray.origin + ray.direction * max(tNear + CORRECTION, 0.0);
+    normal = NormalAABB(rayStart, u_GridMinBounds, u_GridMaxBounds);
+    rayStart -= u_GridMinBounds;
+    const vec3 invRayDir = 1.0 / ray.direction;
+    const ivec3 gridSize = ivec3(u_GridXSize, u_GridYSize, u_GridZSize);
+
+    ivec3 currentPos;
+    vec3 tMax;
+    vec3 tDelta;
+    ivec3 gridStep;
+
+    InitDDA(u_VoxelSize, rayStart, ray.direction, invRayDir, currentPos, tMax, tDelta, gridStep);
+
+
+    ivec3 outOfBounds = GetOutOfBounds(ray.direction, gridSize);
+
+    while (InBounds(currentPos, outOfBounds)) {
+        uint currentVoxel = Voxels[GetIndex(currentPos, gridSize)];
+        if (currentVoxel != 0) {
+            return DecodeColor(currentVoxel);
+        }
+        steps++;
+        StepDDA(tDelta, gridStep, normal, tMax, currentPos);
+    }
+
+    return vec4(0.0);
+}
+
+void
+main() {
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = (vec2(pixelCoords) / u_Resolution) * 2.0 - 1.0;
+    ray = CastRay(u_CameraPosition, u_InvView, u_InvProjection, uv);
+
+    vec3 normal;
+    uint steps;
+
+    vec4 voxelColor = Traverse(normal, steps);
+    vec4 frag;
+    if (u_ShowSteps) {
+        frag = DecodeSteps(steps, u_GridXSize + u_GridYSize + u_GridZSize); // + voxelColor;
+    } else if (u_ShowNormals) {
+        frag = vec4(normal * 0.5 + 0.5, 1.0);
+    } else {
+        frag = voxelColor * max(dot(normal, normalize(vec3(0.3, 1.0, 0.3))), 0.1);
+    }
+
+    imageStore(screen, pixelCoords, frag);
+}

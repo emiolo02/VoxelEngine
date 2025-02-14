@@ -1,8 +1,11 @@
 .vs/
 out/
 build/
-bin/
+
+bin/*
 !bin/shaders
+libs/*/
+!libs/CMakeLists.txt
 
 .idea/
 .cache/

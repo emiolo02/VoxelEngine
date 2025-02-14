@@ -1,0 +1,151 @@
+#version 460 core
+
+#include "rt.glsl"
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout (rgba32f, binding = 0) uniform image2D screen;
+
+
+#define EMPTY_BRICK 0xFFFFFFFF
+struct Brick
+{
+    uint voxels[512];
+};
+
+uniform vec2 u_Resolution;
+
+uniform mat4 u_InvProjection;
+uniform mat4 u_InvView;
+uniform vec3 u_CameraPosition;
+
+uniform vec3 u_GridMinBounds;
+uniform vec3 u_GridMaxBounds;
+uniform int u_GridXSize;
+uniform int u_GridYSize;
+uniform int u_GridZSize;
+uniform float u_VoxelSize;
+
+uniform bool u_ShowSteps;
+uniform bool u_ShowNormals;
+
+Ray ray;
+
+layout (binding = 2, std430) readonly buffer ssbo1
+{
+    uint CoarseGrid[];
+};
+
+layout (binding = 3, std430) readonly buffer ssbo2
+{
+    Brick Bricks[];
+};
+
+vec4
+TraverseFine(uint brickIndex, vec3 minBounds, vec3 maxBounds, inout vec3 normal, inout uint steps) {
+
+    float tNear, tFar;
+    normal = vec3(0.0);
+    if (!IntersectAABB(ray, tNear, tFar, minBounds, maxBounds)) {
+        return vec4(0.1);
+    }
+
+
+    vec3 rayStart = ray.origin + ray.direction * max(tNear + CORRECTION, 0.0);
+    normal = NormalAABB(rayStart, minBounds + CORRECTION, maxBounds - CORRECTION);
+    rayStart -= minBounds;
+    const vec3 invRayDir = 1.0 / ray.direction;
+    ivec3 currentPos;
+    vec3 tMax;
+    vec3 tDelta;
+    ivec3 gridStep;
+
+    InitDDA(u_VoxelSize, rayStart, ray.direction, invRayDir, currentPos, tMax, tDelta, gridStep);
+
+    //return vec4(currentPos / 8.0, 1);
+
+    ivec3 outOfBounds = GetOutOfBounds(ray.direction, ivec3(8));
+
+
+    while (InBounds(currentPos, outOfBounds)) {
+        uint currentVoxel = Bricks[brickIndex].voxels[GetIndex(currentPos, ivec3(8))];
+        if (currentVoxel != 0) {
+            return DecodeColor(currentVoxel);
+        }
+        steps++;
+        StepDDA(tDelta, gridStep, normal, tMax, currentPos);
+    }
+
+    return vec4(0.0);
+}
+
+vec4
+TraverseCoarse(out vec3 normal, out uint steps) {
+    float tNear, tFar;
+    steps = 0;
+    normal = vec3(0.0);
+    if (!IntersectAABB(ray, tNear, tFar, u_GridMinBounds + 0.0001, u_GridMaxBounds - 0.0001)) {
+        return vec4(0);
+    }
+    vec3 rayStart = ray.origin + ray.direction * max(tNear + CORRECTION, 0.0);
+    normal = NormalAABB(rayStart, u_GridMinBounds, u_GridMaxBounds);
+    rayStart -= u_GridMinBounds;
+    const vec3 invRayDir = 1.0 / ray.direction;
+    const ivec3 gridSize = ivec3(u_GridXSize, u_GridYSize, u_GridZSize);
+
+    ivec3 currentPos;
+    vec3 tMax;
+    vec3 tDelta;
+    ivec3 gridStep;
+
+    InitDDA(u_VoxelSize * 8.0, rayStart, ray.direction, invRayDir, currentPos, tMax, tDelta, gridStep);
+
+
+    ivec3 outOfBounds = GetOutOfBounds(ray.direction, gridSize);
+
+    while (InBounds(currentPos, outOfBounds)) {
+        uint currentBrick = CoarseGrid[GetIndex(currentPos, gridSize)];
+        if (currentBrick != EMPTY_BRICK) {
+            vec3 minBounds = vec3(currentPos) * u_VoxelSize * 8 - u_GridMinBounds;
+            vec3 maxBounds = vec3(currentPos + 1) * u_VoxelSize * 8 - u_GridMinBounds;
+            vec4 color = TraverseFine(currentBrick, minBounds, maxBounds, normal, steps);
+            if (color != vec4(0)) {
+                return color;
+            }
+        }
+        steps++;
+        StepDDA(tDelta, gridStep, normal, tMax, currentPos);
+    }
+
+    return vec4(0);
+}
+
+void main()
+{
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = (vec2(pixelCoords) / u_Resolution) * 2.0 - 1.0;
+    ray = CastRay(u_CameraPosition, u_InvView, u_InvProjection, uv);
+
+    vec3 normal;
+    uint steps;
+
+    vec4 voxelColor = TraverseCoarse(normal, steps);
+    vec4 frag;
+    const vec3 sun = vec3(0.3, 1.0, 0.3);
+    if (u_ShowSteps) {
+        frag = DecodeSteps(steps, (u_GridXSize + u_GridYSize + u_GridZSize) * 8);
+    } else if (u_ShowNormals) {
+        frag = vec4(normal * 0.5 + 0.5, 1);
+    } else {
+        frag = voxelColor * max(dot(normal, sun), 0.1);
+    }
+
+    // Sky color
+    //if (frag == vec4(0)) {
+    //    const vec3 sky = vec3(0.3, 0.4, 0.6);
+    //    const float allignment = dot(ray.direction, sun);
+    //    const vec3 spec = vec3(1.0, 0.9, 1.0) * smoothstep(0.95, 1.2, allignment);
+    //    frag = vec4(sky * (allignment * 0.5 + 0.5) + spec, 1.0);
+    //}
+
+    imageStore(screen, pixelCoords, frag);
+}
