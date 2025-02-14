@@ -3,7 +3,6 @@
 #include <GL/gl.h>
 #include "GLFW/glfw3.h"
 
-#include "glm/ext/vector_int3.hpp"
 #include "Input/InputManager.hpp"
 #include "Input/Keyboard.hpp"
 
@@ -91,7 +90,7 @@ App::Run() {
   auto &model = ObjLoader::Get().Load(MODEL_PATH);
   //ImageManager::Get().Save(1, "sponzatest.png");
   OctreeMesh octree(model);
-  octree.Subdivide(8);
+  octree.Subdivide(10);
 
   ObjLoader::Get().Remove(MODEL_PATH);
 

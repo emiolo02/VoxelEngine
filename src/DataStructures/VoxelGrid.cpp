@@ -1,5 +1,4 @@
 #include "VoxelGrid.hpp"
-#include "glm/ext/vector_float3.hpp"
 
 VoxelGrid::VoxelGrid()
   : m_Voxels({0xFFFFFFFF})

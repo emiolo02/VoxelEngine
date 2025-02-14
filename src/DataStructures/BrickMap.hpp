@@ -1,6 +1,5 @@
 #pragma once
 
-#include "glm/ext/vector_int3.hpp"
 #include "Math/BoundingBox.hpp"
 #include "Math/Color.hpp"
 #include <cstddef>

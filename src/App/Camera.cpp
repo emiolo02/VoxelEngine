@@ -1,5 +1,4 @@
 #include "Camera.hpp"
-#include "glm/ext/matrix_transform.hpp"
 
 Camera::Camera() {
   m_Projection = identity<mat4>();

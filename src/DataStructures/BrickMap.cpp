@@ -1,5 +1,4 @@
 #include "BrickMap.hpp"
-#include "glm/ext/vector_int3.hpp"
 #include <cmath>
 
 #include "Math/PerlinNoise.hpp"

@@ -1,8 +1,10 @@
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
-#include "glm/glm.hpp"
+#include "ext/matrix_clip_space.hpp"
+#include "ext/matrix_transform.hpp"
+#include "geometric.hpp"
+#include "glm.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/string_cast.hpp"
+#include "gtx/string_cast.hpp"
+#include "glm.hpp"
 #include <cassert>
 #include <chrono>
 #include <cstdint>

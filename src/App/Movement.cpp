@@ -1,5 +1,4 @@
 #include "Movement.hpp"
-#include "glm/geometric.hpp"
 #include "imgui.h"
 #include "Input/InputManager.hpp"
 #include "Input/Keyboard.hpp"
@@ -17,11 +16,11 @@ void
 Movement::Move(float dt) {
   if (m_LookInput.y > 89.0f)
     m_LookInput.y = 89.0f;
-  if (m_LookInput.y < -89.0f)
-    m_LookInput.y = -89.0f;
+  if (m_LookInput.y<-89.0f)
+      m_LookInput.y = -89.0f;
 
-  m_LookInput += m_InputManager.mouse.GetDeltaPosition() * vec2(1, -1) *
-      m_LookSensitivity * dt;
+    m_LookInput += m_InputManager.mouse.GetDeltaPosition() * vec2(1, -1) *
+    m_LookSensitivity * dt;
 
   m_Forward.x = cos(radians(m_LookInput.x)) * cos(radians(m_LookInput.y));
   m_Forward.y = sin(radians(m_LookInput.y));
