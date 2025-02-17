@@ -11,7 +11,7 @@ public:
   void LookAt(const vec3 &eye, const vec3 &target, const vec3 &up);
 
   float GetFOVdeg() const { return m_FovY; }
-  float GetFOVrad() const { return m_FovY * (float) fPI / 180.0f; }
+  float GetFOVrad() const { return m_FovY * fPI / 180.0f; }
   float GetAspect() const { return m_Aspect; }
 
   const mat4 &GetProjection() const { return m_Projection; }

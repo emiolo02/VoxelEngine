@@ -4,8 +4,8 @@ build/
 
 bin/*
 !bin/shaders
-libs/*/
-!libs/CMakeLists.txt
+Libs/*
+!Libs/CMakeLists.txt
 
 .idea/
 .cache/

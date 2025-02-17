@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ext/matrix_clip_space.hpp"
 #include "ext/matrix_transform.hpp"
 #include "geometric.hpp"

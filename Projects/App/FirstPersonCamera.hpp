@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Camera.hpp"
+#include "Render/Camera.hpp"
 #include "Movement.hpp"
 
 class FirstPersonCamera {

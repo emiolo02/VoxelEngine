@@ -1,0 +1,16 @@
+add_library(engine INTERFACE)
+target_include_directories(engine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(engine INTERFACE common)
+target_precompile_headers(engine INTERFACE ${CMAKE_SOURCE_DIR}/Common/Config.hpp)
+
+file(GLOB children RELATIVE ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+foreach (child ${children})
+    if (IS_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/${child})
+        file(GLOB_RECURSE headers ${child}/*.hpp)
+        file(GLOB_RECURSE sources ${child}/*.cpp)
+        add_library(${child} STATIC ${headers} ${sources})
+
+        target_link_libraries(${child} PUBLIC engine)
+        target_link_libraries(engine INTERFACE ${child})
+    endif ()
+endforeach ()
