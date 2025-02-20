@@ -18,7 +18,7 @@ BrickMap::BrickMap(vec3 position, ivec3 dimensions, float voxelSize)
 BrickMap::BrickMap(const vec3 &position, const std::vector<Color> &voxels, const ivec3 &dimensions,
                    const float voxelSize)
   : m_VoxelSize(voxelSize) {
-  vec3 fCoarseDimensions = vec3(dimensions) / 8.0f;
+  const vec3 fCoarseDimensions = vec3(dimensions) / 8.0f;
   m_Dimensions = ivec3(std::ceil(fCoarseDimensions.x),
                        std::ceil(fCoarseDimensions.y),
                        std::ceil(fCoarseDimensions.z));
@@ -39,7 +39,7 @@ BrickMap::BrickMap(const vec3 &position, const std::vector<Color> &voxels, const
   }
 }
 
-BrickMap::BrickMap(const ivec3 &dimensions, float voxelSize)
+BrickMap::BrickMap(const ivec3 &dimensions, const float voxelSize)
   : m_VoxelSize(voxelSize) {
   vec3 fCoarseDimensions = vec3(dimensions) / 8.0f;
   m_Dimensions = ivec3(std::ceil(fCoarseDimensions.x),
@@ -54,7 +54,7 @@ BrickMap::BrickMap(const ivec3 &dimensions, float voxelSize)
 
 void
 BrickMap::PrintByteSize() const {
-  size_t byteSize = GetByteSize();
+  const size_t byteSize = GetByteSize();
   if (byteSize > 1000000000)
     std::cout << "Size of brick map: " << byteSize / 1000000000.0f << " gb\n";
   else if (byteSize > 1000000)
@@ -65,7 +65,7 @@ BrickMap::PrintByteSize() const {
     std::cout << "Size of brick map: " << byteSize << " b\n";
 }
 
-const bool
+bool
 BrickMap::Insert(uint32 x, uint32 y, uint32 z, Color color) {
   const uint32 coarseX = x / 8;
   const uint32 coarseY = y / 8;
@@ -82,14 +82,19 @@ BrickMap::Insert(uint32 x, uint32 y, uint32 z, Color color) {
   }
 
   if (m_Grid[coarseIndex] == EMPTY_BRICK) {
-    m_Bricks.push_back(Brick());
+    Brick &brick = m_Bricks.emplace_back();
     m_Grid[coarseIndex] = m_Bricks.size() - 1;
+
+    m_Textures.emplace_back();
+    brick.colorPointer = m_Textures.size() - 1;
   }
 
   const size_t fineIndex = x % 8 + 8 * (y % 8 + 8 * (z % 8));
 
   Brick &brick = m_Bricks[m_Grid[coarseIndex]];
-  brick.voxels[fineIndex] = color;
+  BrickTexture &texture = m_Textures[brick.colorPointer];
+  brick.Set(fineIndex, true);
+  texture.voxels[fineIndex] = color;
 
   m_VoxelCount++;
 

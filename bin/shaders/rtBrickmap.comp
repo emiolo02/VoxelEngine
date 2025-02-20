@@ -5,11 +5,41 @@
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout (rgba32f, binding = 0) uniform image2D screen;
 
-
 #define EMPTY_BRICK 0xFFFFFFFF
+#define BRICK_SIZE 512
+
+#define NODE_EMPTY      0
+#define NODE_UNLOADED   1
+#define NODE_REQUESTED  2
+#define NODE_LOADED     3
+
+struct MapNode {
+    // Index into the bricks[] array.
+    uint brickPointer;
+
+    // LOD color is stored int the first 24 bits and the states are stored in the last 8.
+    // States are: 0 = empty, 1 = unloaded, 2 = requested, 3 = loaded.
+    uint lodState;
+};
+
 struct Brick
 {
-    uint voxels[512];
+    // A bitmask where a value of 1 means the coordinate contains a voxel.
+    uint voxels[BRICK_SIZE / 32];
+
+
+    uint colorPointer;
+};
+
+bool VoxelAt(Brick brick, const uint bit) {
+    const uint index = bit / 32;
+    return bool(brick.voxels[index] >> (bit % 32) & 1);
+}
+
+struct BrickTexture
+{
+    // Every voxel's color encoded into a uint32.
+    uint colors[BRICK_SIZE];
 };
 
 uniform vec2 u_Resolution;
@@ -40,6 +70,10 @@ layout (binding = 3, std430) readonly buffer ssbo2
     Brick Bricks[];
 };
 
+layout (binding = 4, std430) readonly buffer ssbo3 {
+    BrickTexture Textures[];
+};
+
 vec4
 TraverseFine(uint brickIndex, vec3 minBounds, vec3 maxBounds, inout vec3 normal, inout uint steps) {
 
@@ -65,11 +99,13 @@ TraverseFine(uint brickIndex, vec3 minBounds, vec3 maxBounds, inout vec3 normal,
 
     ivec3 outOfBounds = GetOutOfBounds(ray.direction, ivec3(8));
 
+    Brick currentBrick = Bricks[brickIndex];
 
     while (InBounds(currentPos, outOfBounds)) {
-        uint currentVoxel = Bricks[brickIndex].voxels[GetIndex(currentPos, ivec3(8))];
-        if (currentVoxel != 0) {
-            return DecodeColor(currentVoxel);
+        //uint currentVoxel = Bricks[brickIndex].voxels[GetIndex(currentPos, ivec3(8))];
+        const uint index = GetIndex(currentPos, ivec3(8));
+        if (VoxelAt(currentBrick, index)) {
+            return DecodeColor(Textures[currentBrick.colorPointer].colors[index]);
         }
         steps++;
         StepDDA(tDelta, gridStep, normal, tMax, currentPos);
@@ -146,6 +182,5 @@ void main()
     //    const vec3 spec = vec3(1.0, 0.9, 1.0) * smoothstep(0.95, 1.2, allignment);
     //    frag = vec4(sky * (allignment * 0.5 + 0.5) + spec, 1.0);
     //}
-
     imageStore(screen, pixelCoords, frag);
 }

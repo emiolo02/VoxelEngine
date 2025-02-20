@@ -3,19 +3,30 @@
 #include <fstream>
 #include <sstream>
 
+std::unordered_map<string, string> Shader::s_ShaderCache;
+std::unordered_map<string, int32> Shader::s_UniformCache;
+
+//------------------------------------------------------------------------------------------
+
 Shader::Shader(const string &vsPath, const string &fsPath) {
   Load(vsPath, fsPath);
 }
 
+//------------------------------------------------------------------------------------------
+
 Shader::Shader(const string &csPath) {
   Load(csPath);
 }
+
+//------------------------------------------------------------------------------------------
 
 Shader::~Shader() {
   if (m_Id) {
     glDeleteProgram(m_Id);
   }
 }
+
+//------------------------------------------------------------------------------------------
 
 void
 Shader::Load(const string &vsPath, const string &fsPath) {
@@ -28,6 +39,8 @@ Shader::Load(const string &vsPath, const string &fsPath) {
   glLinkProgram(m_Id);
 }
 
+//------------------------------------------------------------------------------------------
+
 void
 Shader::Load(const string &csPath) {
   m_Id = glCreateProgram();
@@ -36,6 +49,8 @@ Shader::Load(const string &csPath) {
   glAttachShader(m_Id, cs);
   glLinkProgram(m_Id);
 }
+
+//------------------------------------------------------------------------------------------
 
 string
 Shader::LoadShader(const string &path) {
@@ -61,6 +76,8 @@ Shader::LoadShader(const string &path) {
   return contents.str();
 }
 
+//------------------------------------------------------------------------------------------
+
 uint32
 Shader::CompileShader(const string &path, const uint32 type) {
   const string source = LoadShader(path);
@@ -78,6 +95,8 @@ Shader::CompileShader(const string &path, const uint32 type) {
   return shader;
 }
 
+//------------------------------------------------------------------------------------------
+
 string
 Shader::ErrorLog(const uint32 shader) {
   string error;
@@ -94,105 +113,143 @@ Shader::ErrorLog(const uint32 shader) {
   return error;
 }
 
+//------------------------------------------------------------------------------------------
+
 void
 Shader::Bind() const {
   glUseProgram(m_Id);
 }
 
-void
-Shader::SetValue(const string &name, bool value) {
-  glUniform1i(GetUniform(name), value);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, int32 value) {
-  glUniform1i(GetUniform(name), value);
+Shader::SetValue(const string &name, const bool value) const {
+  glUniform1i(GetUniform(m_Id, name), value);
 }
 
-void
-Shader::SetValue(const string &name, uint32 value) {
-  glUniform1ui(GetUniform(name), value);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, float value) {
-  glUniform1f(GetUniform(name), value);
+Shader::SetValue(const string &name, const int32 value) const {
+  glUniform1i(GetUniform(m_Id, name), value);
 }
 
-void
-Shader::SetValue(const string &name, const vec2 &value) {
-  glUniform2fv(GetUniform(name), 1, &value[0]);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, const vec3 &value) {
-  glUniform3fv(GetUniform(name), 1, &value[0]);
+Shader::SetValue(const string &name, const uint32 value) const {
+  glUniform1ui(GetUniform(m_Id, name), value);
 }
 
-void
-Shader::SetValue(const string &name, const vec4 &value) {
-  glUniform4fv(GetUniform(name), 1, &value[0]);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, const mat3 &value) {
-  glUniformMatrix3fv(GetUniform(name), 1, false, &value[0][0]);
+Shader::SetValue(const string &name, const float value) const {
+  glUniform1f(GetUniform(m_Id, name), value);
 }
 
-void
-Shader::SetValue(const string &name, const mat4 &value) {
-  glUniformMatrix4fv(GetUniform(name), 1, false, &value[0][0]);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, const std::vector<int32> &value) {
-  glUniform1iv(GetUniform(name), value.size(), &value[0]);
+Shader::SetValue(const string &name, const vec2 &value) const {
+  glUniform2fv(GetUniform(m_Id, name), 1, &value[0]);
 }
 
-void
-Shader::SetValue(const string &name, const std::vector<uint32> &value) {
-  glUniform1uiv(GetUniform(name), value.size(), &value[0]);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, const std::vector<float> &value) {
-  glUniform1fv(GetUniform(name), value.size(), &value[0]);
+Shader::SetValue(const string &name, const vec3 &value) const {
+  glUniform3fv(GetUniform(m_Id, name), 1, &value[0]);
 }
 
-void
-Shader::SetValue(const string &name, const std::vector<vec2> &value) {
-  glUniform2fv(GetUniform(name), value.size(), &value[0][0]);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, const std::vector<vec3> &value) {
-  glUniform3fv(GetUniform(name), value.size(), &value[0][0]);
+Shader::SetValue(const string &name, const vec4 &value) const {
+  glUniform4fv(GetUniform(m_Id, name), 1, &value[0]);
 }
 
-void
-Shader::SetValue(const string &name, const std::vector<vec4> &value) {
-  glUniform4fv(GetUniform(name), value.size(), &value[0][0]);
-}
+//------------------------------------------------------------------------------------------
 
 void
-Shader::SetValue(const string &name, const std::vector<mat3> &value) {
-  glUniformMatrix3fv(GetUniform(name), value.size(), false, &value[0][0][0]);
+Shader::SetValue(const string &name, const mat3 &value) const {
+  glUniformMatrix3fv(GetUniform(m_Id, name), 1, false, &value[0][0]);
 }
 
+//------------------------------------------------------------------------------------------
+
 void
-Shader::SetValue(const string &name, const std::vector<mat4> &value) {
-  glUniformMatrix4fv(GetUniform(name), value.size(), false, &value[0][0][0]);
+Shader::SetValue(const string &name, const mat4 &value) const {
+  glUniformMatrix4fv(GetUniform(m_Id, name), 1, false, &value[0][0]);
 }
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<int32> &value) const {
+  glUniform1iv(GetUniform(m_Id, name), value.size(), &value[0]);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<uint32> &value) const {
+  glUniform1uiv(GetUniform(m_Id, name), value.size(), &value[0]);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<float> &value) const {
+  glUniform1fv(GetUniform(m_Id, name), value.size(), &value[0]);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<vec2> &value) const {
+  glUniform2fv(GetUniform(m_Id, name), value.size(), &value[0][0]);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<vec3> &value) const {
+  glUniform3fv(GetUniform(m_Id, name), value.size(), &value[0][0]);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<vec4> &value) const {
+  glUniform4fv(GetUniform(m_Id, name), value.size(), &value[0][0]);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<mat3> &value) const {
+  glUniformMatrix3fv(GetUniform(m_Id, name), value.size(), false, &value[0][0][0]);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Shader::SetValue(const string &name, const std::vector<mat4> &value) const {
+  glUniformMatrix4fv(GetUniform(m_Id, name), value.size(), false, &value[0][0][0]);
+}
+
+//------------------------------------------------------------------------------------------
 
 int32
-Shader::GetUniform(const string &name) {
-  if (m_UniformCache.find(name) != m_UniformCache.end())
-    return m_UniformCache[name];
+Shader::GetUniform(const uint32 program, const string &name) {
+  if (s_UniformCache.contains(name))
+    return s_UniformCache[name];
 
-  int32 location = glGetUniformLocation(m_Id, name.c_str());
+  const int32 location = glGetUniformLocation(program, name.c_str());
   if (location == -1)
     std::cout << "Uniform \"" << name << "\" was not found!\n";
 
-  m_UniformCache[name] = location;
+  s_UniformCache[name] = location;
   return location;
 }

@@ -7,13 +7,14 @@
 #include "Input/Keyboard.hpp"
 
 
-#include "Render/Vertex/IndexBuffer.hpp"
-#include "Render/Vertex/VertexArray.hpp"
-#include "Render/Vertex/VertexBuffer.hpp"
-#include "Render/Vertex/VertexBufferLayout.hpp"
-#include "Render/Texture/Texture.hpp"
-
-#include "Render/Shader/Shader.hpp"
+//#include "Render/Vertex/IndexBuffer.hpp"
+//#include "Render/Vertex/VertexArray.hpp"
+//#include "Render/Vertex/VertexBuffer.hpp"
+//#include "Render/Vertex/VertexBufferLayout.hpp"
+//#include "Render/Texture/Texture.hpp"
+//
+//#include "Render/Shader/Shader.hpp"
+#include "Render/Renderer.hpp"
 #include "Render/Shader/StorageBuffer.hpp"
 
 #include "DataStructures/BrickMap.hpp"
@@ -78,34 +79,33 @@ App::Open() {
 void
 App::Run() {
   std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
-  //Shader blitShader("shaders/fullscreen.vert", "shaders/blit.frag");
+
   Debug::Init();
-  Shader gridShader("shaders/rtGrid.comp");
-  Shader brickShader("shaders/rtBrickmap.comp");
 
-  Shader fxaaShader("shaders/fxaa.comp");
 
-#define MODEL_PATH "assets/dragon_vrip.ply"
+#define MODEL_PATH "assets/sponza/Sponza.gltf"
 
   auto &model = ObjLoader::Get().Load(MODEL_PATH);
   //ImageManager::Get().Save(1, "sponzatest.png");
   OctreeMesh octree(model);
-  octree.Subdivide(10);
+  octree.Subdivide(11);
 
   ObjLoader::Get().Remove(MODEL_PATH);
-
-  VoxelGrid grid; //= octree.CreateVoxelGrid(0.1f);
-
-  SSBO gridSSBO(grid.GetVoxels().data(), grid.GetVoxels().size() * sizeof(Color), 1);
 
   BrickMap brickMap = octree.CreateBrickMap(0.1f);
   brickMap.PrintByteSize();
 
   octree.Clear();
 
-  SSBO coarseSSBO(brickMap.GetGrid().data(), brickMap.GetGrid().size() * sizeof(uint32), 2);
-  SSBO fineSSBO(
-    brickMap.GetBricks().data(), brickMap.GetBricks().size() * sizeof(BrickMap::Brick), 3);
+
+  Renderer renderer;
+  renderer.SetBrickMap(&brickMap);
+
+  renderer.GetBrickGridBuffer().Upload(brickMap.GetGrid());
+  renderer.GetSolidMaskBuffer().Upload(brickMap.GetBricks());
+  renderer.GetBrickTextureBuffer().Upload(brickMap.GetBrickTextures());
+  //auto &brickTextures = brickMap.GetBrickTextures();
+  //Texture bricks((Color *) brickTextures.data(), 8, 8, 8, brickTextures.size());
 
   int32 windowWidth, windowHeight;
   m_Window.GetSize(windowWidth, windowHeight);
@@ -114,17 +114,16 @@ App::Run() {
   Input::InputManager &inputManager = Input::InputManager::Get();
 
   FirstPersonCamera firstPersonCamera(1.0f, 75.0f, windowWidth, windowHeight);
-  m_Inspector.AddBool("Use brickmap");
-  m_Inspector.AddBool("Show steps");
-  m_Inspector.AddBool("Show normals");
+  Camera::SetMainCamera(firstPersonCamera.GetCamera());
+
+  //m_Inspector.AddBool("Show steps");
+  //m_Inspector.AddBool("Show normals");
 
   m_Inspector.AddBool("FXAA");
   m_Inspector.AddFloat("FXAA threshold min", 0.18f, 0.001f);
   m_Inspector.AddFloat("FXAA threshold max", 0.5f, 0.001f);
 
-
   glfwSwapInterval(1);
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
   float deltaSeconds = 0.0f;
 
@@ -146,88 +145,13 @@ App::Run() {
     //octree.Draw();
     glViewport(0, 0, windowWidth, windowHeight);
     firstPersonCamera.SetProjection(windowWidth, windowHeight);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    Texture renderTexture(windowWidth, windowHeight);
-    m_Inspector.AddTexture("Viewport", {renderTexture.GetId(), windowWidth, windowHeight, 0.1f});
+    renderer.SetDimensions(windowWidth, windowHeight);
+    renderer.Render();
+
 
     //-----------------
 
-    renderTexture.BindImageTexture();
-
-    if (!m_Inspector.GetBool("Use brickmap")) {
-      gridShader.Bind();
-
-      gridSSBO.Bind();
-
-      gridShader.SetValue("u_CameraPosition", firstPersonCamera.GetPosition());
-      gridShader.SetValue("u_InvProjection", firstPersonCamera.GetInvProjection());
-      gridShader.SetValue("u_InvView", firstPersonCamera.GetInvView());
-
-      const AABB &boundingBox = grid.GetBoundingBox();
-
-      gridShader.SetValue("u_GridMinBounds", boundingBox.GetMinExtents());
-      gridShader.SetValue("u_GridMaxBounds", boundingBox.GetMaxExtents());
-      gridShader.SetValue("u_VoxelSize", grid.GetVoxelSize());
-
-      const ivec3 &dimensions = grid.GetDimensions();
-
-      gridShader.SetValue("u_GridXSize", dimensions.x);
-      gridShader.SetValue("u_GridYSize", dimensions.y);
-      gridShader.SetValue("u_GridZSize", dimensions.z);
-      gridShader.SetValue("u_Resolution", vec2(windowWidth, windowHeight));
-
-      gridShader.SetValue("u_ShowSteps", m_Inspector.GetBool("Show steps"));
-      gridShader.SetValue("u_ShowNormals", m_Inspector.GetBool("Show normals"));
-    } else {
-      brickShader.Bind();
-
-      coarseSSBO.Bind();
-      fineSSBO.Bind();
-
-      brickShader.SetValue("u_CameraPosition", firstPersonCamera.GetPosition());
-      brickShader.SetValue("u_InvProjection", firstPersonCamera.GetInvProjection());
-      brickShader.SetValue("u_InvView", firstPersonCamera.GetInvView());
-
-      const AABB &boundingBox = brickMap.GetBoundingBox();
-
-      brickShader.SetValue("u_GridMinBounds", boundingBox.GetMinExtents());
-      brickShader.SetValue("u_GridMaxBounds", boundingBox.GetMaxExtents());
-      brickShader.SetValue("u_VoxelSize", brickMap.GetVoxelSize());
-
-      const ivec3 &dimensions = brickMap.GetDimensions();
-
-      brickShader.SetValue("u_GridXSize", dimensions.x);
-      brickShader.SetValue("u_GridYSize", dimensions.y);
-      brickShader.SetValue("u_GridZSize", dimensions.z);
-      brickShader.SetValue("u_Resolution", vec2(windowWidth, windowHeight));
-
-      brickShader.SetValue("u_ShowSteps", m_Inspector.GetBool("Show steps"));
-      brickShader.SetValue("u_ShowNormals", m_Inspector.GetBool("Show normals"));
-    }
-
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    glDispatchCompute(std::ceil(float(windowWidth) / 16.0f), std::ceil(float(windowHeight) / 16.0f), 1);
-
-    //------------------------------------------------
-
-    if (m_Inspector.GetBool("FXAA")) {
-      fxaaShader.Bind();
-      renderTexture.BindImageTexture();
-
-      fxaaShader.SetValue("u_ThresholdMin", m_Inspector.GetFloat("FXAA threshold min"));
-      fxaaShader.SetValue("u_ThresholdMax", m_Inspector.GetFloat("FXAA threshold max"));
-
-      glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-      glDispatchCompute(std::ceil(float(windowWidth) / 16.0f), std::ceil(float(windowHeight) / 16.0f), 1);
-    }
-    //blitShader.Bind();
-
-    //renderTexture.BindTexture();
-    //vertexArray.Bind();
-    //indexBuffer.Bind();
-    //glDrawElements(
-    //  GL_TRIANGLES, indexBuffer.GetSize(), GL_UNSIGNED_INT, nullptr);
 
     //octreeDragon.Draw();
 

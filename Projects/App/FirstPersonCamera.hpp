@@ -28,6 +28,8 @@ public:
   const vec3 &GetPosition() { return m_Movement.GetPosition(); }
   const vec3 &GetForward() { return m_Movement.GetForward(); }
 
+  Camera *GetCamera() { return &m_Camera; }
+
   // TEMPORARY
   inline Movement &GetMovement() { return m_Movement; }
 

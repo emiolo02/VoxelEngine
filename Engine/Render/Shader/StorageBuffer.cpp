@@ -1,29 +1,35 @@
 #include "StorageBuffer.hpp"
 #include "GL/glew.h"
 
-SSBO::SSBO(const void *data, size_t byteSize, uint32 binding)
-  : m_Size(byteSize)
-    , m_Binding(binding) {
-  glCreateBuffers(1, &m_Id);
-
-  glNamedBufferStorage(m_Id, m_Size, data, GL_DYNAMIC_STORAGE_BIT);
+void
+details::CreateBuffer(uint32 &id) {
+  glCreateBuffers(1, &id);
 }
 
-SSBO::~SSBO() {
-  glDeleteBuffers(1, &m_Id);
-}
+//------------------------------------------------------------------------------------------
 
 void
-SSBO::Bind() const {
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_Binding, m_Id);
+details::Upload(const uint32 id, const size_t size, const void *data) {
+  glNamedBufferStorage(id, size, data, GL_DYNAMIC_STORAGE_BIT);
 }
 
-void
-SSBO::UnBind() const {
-  std::cout << "SSBO::UnBind is not implemented.\n";
-}
+//------------------------------------------------------------------------------------------
 
 void
-SSBO::Replace(size_t index, void *data, size_t byteSize) {
-  glNamedBufferSubData(m_Id, index, byteSize, data);
+details::GetData(const uint32 id, const size_t offset, const size_t size, void *data) {
+  glGetNamedBufferSubData(id, offset, size, data);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+details::Clear(const uint32 id) {
+  glDeleteBuffers(1, &id);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+details::Bind(const uint32 id, const uint32 binding) {
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, id);
 }

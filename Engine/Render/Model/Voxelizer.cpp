@@ -257,6 +257,7 @@ OctreeMesh::Node::Subdivide(const uint32 subdivisions) {
                 };
                 break;
             }
+            assert(!std::isnan(uv.x) && !std::isnan(uv.y));
         }
         const Image &image = ImageManager::Get().GetImage(triangles[0].imageId);
         const int imagex = std::fmod(uv.x, 1.0f) * image.width;

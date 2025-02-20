@@ -1,16 +1,23 @@
 #include "Camera.hpp"
 
-Camera::Camera() {
-  m_Projection = identity<mat4>();
-  m_View = identity<mat4>();
-  m_ProjView = identity<mat4>();
-  m_InvProjection = identity<mat4>();
-  m_InvView = identity<mat4>();
-  m_InvProjView = identity<mat4>();
+Camera *Camera::s_MainCamera = nullptr;
+
+//------------------------------------------------------------------------------------------
+
+Camera::Camera()
+  : m_Position(0.0f),
+    m_Projection(identity<mat4>()),
+    m_View(identity<mat4>()),
+    m_ProjView(identity<mat4>()),
+    m_InvProjection(identity<mat4>()),
+    m_InvView(identity<mat4>()),
+    m_InvProjView(identity<mat4>()) {
 }
 
+//------------------------------------------------------------------------------------------
+
 void
-Camera::Perspective(float near, float far, float aspect, float fovY) {
+Camera::Perspective(const float near, const float far, const float aspect, const float fovY) {
   m_Near = near, m_Far = far;
   m_FovY = fovY;
   m_Aspect = aspect;
@@ -22,8 +29,10 @@ Camera::Perspective(float near, float far, float aspect, float fovY) {
   m_InvProjView = m_InvProjection * m_InvView;
 }
 
+//------------------------------------------------------------------------------------------
+
 void
-Camera::Orthographic(float near, float far, float l, float r, float t, float b) {
+Camera::Orthographic(const float near, const float far, const float l, const float r, const float t, const float b) {
   m_Near = near, m_Far = far;
   m_FovY = 0.0f;
   m_Aspect = t / r;
@@ -31,12 +40,16 @@ Camera::Orthographic(float near, float far, float l, float r, float t, float b) 
   m_Projection = ortho(l, r, b, t, near, far);
   m_ProjView = m_Projection * m_View;
 
-  m_InvProjection = glm::inverse(m_Projection);
+  m_InvProjection = inverse(m_Projection);
   m_InvProjView = m_InvProjection * m_InvView;
 }
 
+//------------------------------------------------------------------------------------------
+
 void
 Camera::LookAt(const vec3 &eye, const vec3 &target, const vec3 &up) {
+  m_Position = eye;
+
   m_View = lookAt(eye, target, up);
   m_ProjView = m_Projection * m_View;
   m_InvView = inverse(m_View);

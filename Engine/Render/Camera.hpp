@@ -14,6 +14,8 @@ public:
   float GetFOVrad() const { return m_FovY * fPI / 180.0f; }
   float GetAspect() const { return m_Aspect; }
 
+  const vec3 &GetPosition() const { return m_Position; }
+
   const mat4 &GetProjection() const { return m_Projection; }
   const mat4 &GetView() const { return m_View; }
   const mat4 &GetProjView() const { return m_ProjView; }
@@ -22,7 +24,11 @@ public:
   const mat4 &GetInvView() const { return m_InvView; }
   const mat4 &GetInvProjView() const { return m_InvProjView; }
 
+  static Camera *GetMainCamera() { return s_MainCamera; }
+  static void SetMainCamera(Camera *camera) { s_MainCamera = camera; }
+
 private:
+  vec3 m_Position;
   mat4 m_Projection;
   mat4 m_View;
   mat4 m_ProjView;
@@ -35,4 +41,6 @@ private:
   float m_Far = 0.0f;
   float m_FovY = 0.0f;
   float m_Aspect = 0.0f;
+
+  static Camera *s_MainCamera;
 };
