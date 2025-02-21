@@ -7,13 +7,8 @@
 #include "Input/Keyboard.hpp"
 
 
-//#include "Render/Vertex/IndexBuffer.hpp"
-//#include "Render/Vertex/VertexArray.hpp"
-//#include "Render/Vertex/VertexBuffer.hpp"
-//#include "Render/Vertex/VertexBufferLayout.hpp"
-//#include "Render/Texture/Texture.hpp"
-//
-//#include "Render/Shader/Shader.hpp"
+#include "Render/GraphicsNode.hpp"
+#include "Render/Shader/Shader.hpp"
 #include "Render/Renderer.hpp"
 #include "Render/Shader/StorageBuffer.hpp"
 
@@ -83,29 +78,29 @@ App::Run() {
   Debug::Init();
 
 
-#define MODEL_PATH "assets/sponza/Sponza.gltf"
+#define MODEL_PATH "assets/monkey.obj"
 
   auto &model = ObjLoader::Get().Load(MODEL_PATH);
   //ImageManager::Get().Save(1, "sponzatest.png");
-  OctreeMesh octree(model);
-  octree.Subdivide(11);
+  //OctreeMesh octree(model);
+  //octree.Subdivide(8);
+  GraphicsNode graphicsNode(model.meshes[0]);
+  ModelBVH bvh(model);
 
   ObjLoader::Get().Remove(MODEL_PATH);
 
-  BrickMap brickMap = octree.CreateBrickMap(0.1f);
-  brickMap.PrintByteSize();
+  //BrickMap brickMap = octree.CreateBrickMap(0.1f);
+  //brickMap.PrintByteSize();
 
-  octree.Clear();
+  //octree.Clear();
 
 
   Renderer renderer;
-  renderer.SetBrickMap(&brickMap);
+  //renderer.SetBrickMap(&brickMap);
 
-  renderer.GetBrickGridBuffer().Upload(brickMap.GetGrid());
-  renderer.GetSolidMaskBuffer().Upload(brickMap.GetBricks());
-  renderer.GetBrickTextureBuffer().Upload(brickMap.GetBrickTextures());
-  //auto &brickTextures = brickMap.GetBrickTextures();
-  //Texture bricks((Color *) brickTextures.data(), 8, 8, 8, brickTextures.size());
+  //renderer.GetBrickGridBuffer().Upload(brickMap.GetGrid());
+  //renderer.GetSolidMaskBuffer().Upload(brickMap.GetBricks());
+  //renderer.GetBrickTextureBuffer().Upload(brickMap.GetBrickTextures());
 
   int32 windowWidth, windowHeight;
   m_Window.GetSize(windowWidth, windowHeight);
@@ -123,6 +118,7 @@ App::Run() {
   m_Inspector.AddFloat("FXAA threshold min", 0.18f, 0.001f);
   m_Inspector.AddFloat("FXAA threshold max", 0.5f, 0.001f);
 
+  m_Inspector.AddInt("BVH Depth");
   glfwSwapInterval(1);
 
   float deltaSeconds = 0.0f;
@@ -151,9 +147,10 @@ App::Run() {
 
 
     //-----------------
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    bvh.Draw(m_Inspector.GetInt("BVH Depth"));
 
-
-    //octreeDragon.Draw();
+    graphicsNode.Draw();
 
     Debug::RenderDebug(firstPersonCamera.GetProjView());
     Debug::ClearQueue();

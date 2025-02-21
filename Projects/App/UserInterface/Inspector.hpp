@@ -16,6 +16,18 @@ class Inspector {
 public:
   void Draw();
 
+  void AddInt(const string &name, const int value = 0) {
+    m_Ints[name] = value;
+  }
+
+  int GetInt(const string &name) {
+    if (!m_Ints.contains(name)) {
+      return 0;
+    }
+
+    return m_Ints[name];
+  }
+
   void AddBool(const string &name, const bool value = false) {
     m_Bools[name] = value;
   }
@@ -67,6 +79,7 @@ public:
   }
 
 private:
+  std::unordered_map<string, int32> m_Ints;
   std::unordered_map<string, bool> m_Bools;
   std::unordered_map<string, InspFloat> m_Floats;
   std::unordered_map<string, vec2> m_Vec2s;

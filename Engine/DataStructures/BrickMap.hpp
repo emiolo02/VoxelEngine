@@ -54,7 +54,7 @@ public:
   const std::vector<uint32> &GetGrid() const { return m_Grid; }
   const std::vector<Brick> &GetBricks() const { return m_Bricks; }
   const std::vector<BrickTexture> &GetBrickTextures() const { return m_Textures; }
-  const AABB &GetBoundingBox() const { return m_BoundingBox; }
+  const BoundingBox &GetBoundingBox() const { return m_BoundingBox; }
   float GetVoxelSize() const { return m_VoxelSize; }
   const ivec3 &GetDimensions() const { return m_Dimensions; }
 
@@ -70,7 +70,7 @@ private:
   std::vector<uint32> m_Grid;
   std::vector<Brick> m_Bricks;
   std::vector<BrickTexture> m_Textures;
-  AABB m_BoundingBox;
+  BoundingBox m_BoundingBox;
   ivec3 m_Dimensions = ivec3();
   float m_VoxelSize = 1.0f;
   int m_VoxelCount = 0;

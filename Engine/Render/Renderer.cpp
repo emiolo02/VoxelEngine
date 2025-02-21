@@ -82,10 +82,10 @@ Renderer::Render() const {
     m_RaytraceBrickmap.SetValue("u_InvProjection", mainCamera->GetInvProjection());
     m_RaytraceBrickmap.SetValue("u_InvView", mainCamera->GetInvView());
 
-    const AABB &boundingBox = m_BrickMap->GetBoundingBox();
+    const BoundingBox &boundingBox = m_BrickMap->GetBoundingBox();
 
-    m_RaytraceBrickmap.SetValue("u_GridMinBounds", boundingBox.GetMinExtents());
-    m_RaytraceBrickmap.SetValue("u_GridMaxBounds", boundingBox.GetMaxExtents());
+    m_RaytraceBrickmap.SetValue("u_GridMinBounds", boundingBox.min);
+    m_RaytraceBrickmap.SetValue("u_GridMaxBounds", boundingBox.max);
     m_RaytraceBrickmap.SetValue("u_VoxelSize", m_BrickMap->GetVoxelSize());
 
     const ivec3 &dimensions = m_BrickMap->GetDimensions();

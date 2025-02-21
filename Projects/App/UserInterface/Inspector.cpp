@@ -26,8 +26,10 @@ Inspector::Draw() {
 
   ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_None);
   ImGui::SetWindowSize({200, 400});
-
   ImGui::Checkbox("Show viewport", &m_ShowViewport);
+
+  for (auto &[name, value]: m_Ints)
+    ImGui::DragInt(name.c_str(), &value);
   for (auto &[name, value]: m_Bools)
     ImGui::Checkbox(name.c_str(), &value);
   for (auto &[name, value]: m_Floats)

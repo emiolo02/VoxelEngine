@@ -1,43 +1,13 @@
 #pragma once
 
-#include <DataStructures/VoxelGrid.hpp>
-
 #include "Model.hpp"
 #include "Math/Color.hpp"
+#include "Math/BoundingBox.hpp"
 
 struct Model;
 struct Mesh;
 
 class BrickMap;
-
-struct BoundingBox {
-    vec3 min = {}, max = {};
-
-    BoundingBox() = default;
-
-    BoundingBox(const vec3 &min, const vec3 &max)
-        : min(min), max(max) {
-    }
-
-    // Assuming size is positive
-    BoundingBox(const vec3 &center, const float size)
-        : min(center - size), max(center + size) {
-    }
-
-    void SetSize(const vec3 &newSize) {
-        const vec3 c = GetCenter();
-        min = c - newSize;
-        max = c + newSize;
-    }
-
-    vec3 GetCenter() const {
-        return (min + max) * 0.5f;
-    }
-
-    vec3 GetSize() const {
-        return max - min;
-    }
-};
 
 struct Triangle {
     Vertex a, b, c;
@@ -45,6 +15,10 @@ struct Triangle {
 
     vec3 GetNormal() const {
         return cross(b.position - a.position, c.position - a.position);
+    }
+
+    vec3 GetCenter() const {
+        return a.position + b.position + c.position / 3.0f;
     }
 
     bool PointInTriangle(const vec3 &query_point,
@@ -140,7 +114,6 @@ public:
 
     BrickMap CreateBrickMap(float voxelSize);
 
-    VoxelGrid CreateVoxelGrid(float voxelSize);
 
     uint32 GetSize() const;
 
@@ -149,4 +122,32 @@ private:
     uint32 m_Size = 0;
 };
 
-std::pair<std::vector<Color>, ivec3> Voxelize(uint32 subdivisions, const Model &model);
+class ModelBVH {
+public:
+    struct Node {
+        Node(uint32 triangleIndex);
+
+        BoundingBox boundingBox;
+
+        uint32 childIndex = 0;
+        uint32 triangleIndex = 0;
+        uint32 triangleCount = 0;
+
+        bool IsLeaf() const;
+    };
+
+    ModelBVH(const Model &model, uint32 maxDepth = 32);
+
+    void Draw(int32 level) const;
+
+private:
+    void Split(Node *node, uint32 depth);
+
+    void DrawImpl(const Node *node, uint32 level, Color color) const;
+
+    uint32 m_MaxDepth = 0;
+    std::vector<Node> m_Nodes;
+    std::vector<Triangle> m_Triangles;
+
+    friend struct Node;
+};

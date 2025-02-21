@@ -204,21 +204,11 @@ OctreeMesh::CreateBrickMap(const float voxelSize) {
     return brickMap;
 }
 
-VoxelGrid
-OctreeMesh::CreateVoxelGrid(const float voxelSize) {
-    std::cout << "Creating voxel grid.\n";
-    std::vector<Color> voxels(m_Size * m_Size * m_Size);
-    m_Root.Linearize(0, ivec3(0), voxels);
-    VoxelGrid grid(vec3(0.0f), ivec3(m_Size), voxelSize);
-    grid.SetVoxels(voxels);
-    return grid;
-}
 
 uint32
 OctreeMesh::GetSize() const {
     return m_Size;
 }
-
 
 void
 OctreeMesh::Node::Draw() {
@@ -267,8 +257,7 @@ OctreeMesh::Node::Subdivide(const uint32 subdivisions) {
         if (color.a < 255) {
             isFilled = false;
         }
-        triangles.clear();
-        triangles.shrink_to_fit();
+        triangles = {};
         return;
     }
 
@@ -309,8 +298,7 @@ OctreeMesh::Node::Subdivide(const uint32 subdivisions) {
         }
     }
 
-    triangles.clear();
-    triangles.shrink_to_fit();
+    triangles = {};
     for (int i = 0; i < 8; ++i) {
         if (nodesToDivide[i]) {
             children[i].Subdivide(subdivisions - 1);
@@ -383,3 +371,124 @@ OctreeMesh::Node::Clear() {
     children = nullptr;
 }
 
+ModelBVH::Node::Node(const uint32 triangleIndex)
+    : boundingBox(vec3(FLT_MAX), vec3(-FLT_MAX)),
+      triangleIndex(triangleIndex) {
+}
+
+void
+ModelBVH::Split(Node *node, const uint32 depth) {
+    if (depth == m_MaxDepth || node->triangleCount < 3) return;
+
+    const vec3 size = node->boundingBox.GetSize();
+    const uint32 splitAxis = size.x > std::max(size.y, size.z) ? 0 : size.y > std::max(size.x, size.z) ? 1 : 2;
+    const float splitPosition = node->boundingBox.GetCenter()[splitAxis];
+
+    node->childIndex = m_Nodes.size();
+    m_Nodes.emplace_back(node->triangleIndex);
+    m_Nodes.emplace_back(node->triangleIndex);
+    Node *childA = &m_Nodes[node->childIndex];
+    Node *childB = &m_Nodes[node->childIndex + 1];
+    for (uint32 i = node->triangleIndex; i < node->triangleIndex + node->triangleCount; ++i) {
+        Triangle &triangle = m_Triangles[i];
+
+        const bool isA = triangle.GetCenter()[splitAxis] < splitPosition;
+        Node *child = isA ? childA : childB;
+        child->boundingBox.GrowToInclude(triangle.a.position);
+        child->boundingBox.GrowToInclude(triangle.b.position);
+        child->boundingBox.GrowToInclude(triangle.c.position);
+
+        child->triangleCount++;
+
+        if (isA) {
+            const uint32 swapIndex = child->triangleIndex + child->triangleCount - 1;
+            std::swap(m_Triangles[i], m_Triangles[swapIndex]);
+            childB->triangleIndex++;
+        }
+    }
+
+    Split(&m_Nodes[node->childIndex], depth + 1);
+    Split(&m_Nodes[node->childIndex + 1], depth + 1);
+}
+
+
+//ModelBVH::Node *
+//ModelBVH::Node::GetChildren() const {
+//    if (childIndex == 0) {
+//        return nullptr;
+//    }
+//    return &container->m_Nodes[childIndex];
+//}
+//
+//std::pair<Triangle *, uint32>
+//ModelBVH::Node::GetTriangles() const {
+//    return {&container->m_Triangles[triangleIndex], triangleCount};
+//}
+
+bool
+ModelBVH::Node::IsLeaf() const {
+    return childIndex == 0;
+}
+
+ModelBVH::ModelBVH(const Model &model, const uint32 maxDepth)
+    : m_MaxDepth(maxDepth) {
+    size_t numTriangles = 0;
+    for (const auto &mesh: model.meshes) {
+        // Assumes mesh has triangular faces.
+        numTriangles += mesh.indices.size() / 3;
+    }
+
+    m_Triangles.reserve(numTriangles);
+
+    BoundingBox rootBounds = {vec3(FLT_MAX), vec3(-FLT_MAX)};
+
+    for (auto &mesh: model.meshes) {
+        const uint32 imageId = mesh.image.id;
+
+        for (unsigned i = 0; i < mesh.indices.size(); i += 3) {
+            const Triangle &triangle = m_Triangles.emplace_back(
+                mesh.vertices[mesh.indices[i]],
+                mesh.vertices[mesh.indices[i + 1]],
+                mesh.vertices[mesh.indices[i + 2]],
+                imageId
+            );
+
+            for (unsigned j = 0; j < 3; ++j) {
+                rootBounds.GrowToInclude(triangle[j].position);
+            }
+        }
+    }
+
+    m_Nodes.emplace_back(0);
+    Node *root = &m_Nodes[0];
+
+    root->triangleCount = m_Triangles.size();
+    root->boundingBox = rootBounds;
+    Split(root, 0);
+
+    std::cout << "Created " << m_Nodes.size() << " BVH nodes.\n";
+}
+
+void
+ModelBVH::Draw(const int32 level) const {
+    DrawImpl(&m_Nodes[0], level, {255, 0, 0, 255});
+}
+
+void
+ModelBVH::DrawImpl(const Node *node, const uint32 level, const Color color) const {
+    if (node->childIndex == 0 || level == 0) {
+        const vec4 v4Color = {
+            static_cast<float>(color.r) / 255.0f,
+            static_cast<float>(color.g) / 255.0f,
+            static_cast<float>(color.b) / 255.0f,
+            static_cast<float>(color.a) / 255.0f
+        };
+        const int lineWitdth = color.r > 0 ? 3 : 2;
+        Debug::DrawBox(node->boundingBox.GetCenter(), vec3(0.0f), node->boundingBox.GetSize(), v4Color, lineWitdth);
+        return;
+    }
+
+    const uint32 childIndex = node->childIndex;
+    DrawImpl(&m_Nodes[childIndex + 0], level - 1, {255, 0, 0, 255});
+    DrawImpl(&m_Nodes[childIndex + 1], level - 1, {0, 255, 0, 255});
+}

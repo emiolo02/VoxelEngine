@@ -10,7 +10,7 @@ BrickMap::BrickMap(vec3 position, ivec3 dimensions, float voxelSize)
                        std::ceil(fCoarseDimensions.y),
                        std::ceil(fCoarseDimensions.z));
 
-  m_BoundingBox = AABB(position, vec3(m_Dimensions) * 8.0f * voxelSize + position);
+  m_BoundingBox = BoundingBox(position, vec3(m_Dimensions) * 8.0f * voxelSize + position);
 
   m_Grid.resize(m_Dimensions.x * m_Dimensions.y * m_Dimensions.z, EMPTY_BRICK);
 }
@@ -23,7 +23,7 @@ BrickMap::BrickMap(const vec3 &position, const std::vector<Color> &voxels, const
                        std::ceil(fCoarseDimensions.y),
                        std::ceil(fCoarseDimensions.z));
 
-  m_BoundingBox = AABB(position, vec3(m_Dimensions) * 8.0f * voxelSize + position);
+  m_BoundingBox = BoundingBox(position, vec3(m_Dimensions) * 8.0f * voxelSize + position);
 
   m_Grid.resize(m_Dimensions.x * m_Dimensions.y * m_Dimensions.z, EMPTY_BRICK);
 
@@ -46,7 +46,7 @@ BrickMap::BrickMap(const ivec3 &dimensions, const float voxelSize)
                        std::ceil(fCoarseDimensions.y),
                        std::ceil(fCoarseDimensions.z));
 
-  m_BoundingBox = AABB(vec3(0.0f), vec3(m_Dimensions) * 8.0f * voxelSize);
+  m_BoundingBox = BoundingBox(vec3(0.0f), vec3(m_Dimensions) * 8.0f * voxelSize);
 
   m_Grid.resize(m_Dimensions.x * m_Dimensions.y * m_Dimensions.z, EMPTY_BRICK);
 }

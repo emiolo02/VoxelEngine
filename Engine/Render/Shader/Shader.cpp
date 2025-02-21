@@ -8,6 +8,13 @@ std::unordered_map<string, int32> Shader::s_UniformCache;
 
 //------------------------------------------------------------------------------------------
 
+Shader::Shader(Shader &&other) noexcept {
+  m_Id = other.m_Id;
+  other.m_Id = 0;
+}
+
+//------------------------------------------------------------------------------------------
+
 Shader::Shader(const string &vsPath, const string &fsPath) {
   Load(vsPath, fsPath);
 }
@@ -24,6 +31,15 @@ Shader::~Shader() {
   if (m_Id) {
     glDeleteProgram(m_Id);
   }
+}
+
+Shader &
+Shader::operator=(Shader &&other) noexcept {
+  if (this != &other) {
+    m_Id = other.m_Id;
+    other.m_Id = 0;
+  }
+  return *this;
 }
 
 //------------------------------------------------------------------------------------------
@@ -118,6 +134,13 @@ Shader::ErrorLog(const uint32 shader) {
 void
 Shader::Bind() const {
   glUseProgram(m_Id);
+}
+
+//------------------------------------------------------------------------------------------
+
+uint32
+Shader::GetProgram() const {
+  return m_Id;
 }
 
 //------------------------------------------------------------------------------------------

@@ -6,17 +6,23 @@ class Shader {
 public:
   Shader() = default;
 
+  Shader(Shader &&other) noexcept;
+
   Shader(const string &vsPath, const string &fsPath);
 
   explicit Shader(const string &csPath);
 
   ~Shader();
 
+  Shader &operator=(Shader &&other) noexcept;
+
   void Load(const string &vsPath, const string &fsPath);
 
   void Load(const string &csPath);
 
   void Bind() const;
+
+  uint32 GetProgram() const;
 
   void SetValue(const string &name, bool value) const;
 

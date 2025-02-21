@@ -11,7 +11,7 @@ VoxelGrid::VoxelGrid(vec3 position, ivec3 dimensions, float voxelSize)
   : m_Dimensions(dimensions)
     , m_VoxelSize(voxelSize) {
   vec3 boundSize = vec3(dimensions) * voxelSize;
-  m_BoundingBox = AABB(position, boundSize + position);
+  m_BoundingBox = BoundingBox(position, boundSize + position);
 
   m_Voxels.resize(m_Dimensions.x * m_Dimensions.y * m_Dimensions.z);
   const size_t byteSize = m_Voxels.size() * sizeof(Color);

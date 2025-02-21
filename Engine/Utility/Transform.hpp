@@ -2,7 +2,7 @@
 
 struct Transform {
     vec3 position = vec3();
-    vec3 scale = vec3();
+    vec3 scale = vec3(1.0f);
     quat orientation = identity<quat>();
 
     mat4 GetMatrix() const {

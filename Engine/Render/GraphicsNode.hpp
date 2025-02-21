@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Shader/Shader.hpp"
 #include "Vertex/VertexArray.hpp"
 #include "Vertex/VertexBuffer.hpp"
 #include "Vertex/IndexBuffer.hpp"
@@ -16,7 +17,7 @@ public:
 
     explicit GraphicsNode(const Mesh &mesh);
 
-    void Bind() const;
+    void Draw() const;
 
     Transform &GetTransform() { return m_Transform; }
     const Transform &GetTransform() const { return m_Transform; }
@@ -33,4 +34,6 @@ private:
     Texture m_Texture;
 
     Transform m_Transform;
+
+    static Shader s_Rasterizer;
 };
