@@ -58,14 +58,20 @@ Renderer::Render() const {
     }
 
     if (m_BrickMap == nullptr) {
-        std::cerr << "Renderer has no reference to a brickmap.\n";
+        static bool hasAlerted = false;
+        if (!hasAlerted)
+            std::cerr << "Renderer has no reference to a brickmap.\n";
+        hasAlerted = true;
         return;
     }
 
     const Camera *mainCamera = Camera::GetMainCamera();
 
     if (mainCamera == nullptr) {
-        std::cerr << "Main camera is not set.\n";
+        static bool hasAlerted = false;
+        if (!hasAlerted)
+            std::cerr << "Main camera is not set.\n";
+        hasAlerted = true;
         return;
     }
 

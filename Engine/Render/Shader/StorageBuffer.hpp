@@ -7,6 +7,8 @@ namespace details {
 
   void GetData(uint32, size_t, size_t, void *);
 
+  void SetData(uint32, size_t, size_t, const void *);
+
   void Clear(uint32);
 
   void Bind(uint32, uint32);
@@ -28,6 +30,8 @@ public:
   void Bind() const;
 
   std::vector<T> GetData(size_t offset, size_t num) const;
+
+  void SetData(size_t offset, const std::vector<T> &data);
 
   size_t GetSize() const { return m_Size; }
 
@@ -86,4 +90,12 @@ StorageBuffer<T>::GetData(const size_t offset, const size_t num) const {
   std::vector<T> data(clamped);
   details::GetData(m_Id, offset, clamped * sizeof(T), data.data());
   return data;
+}
+
+//------------------------------------------------------------------------------------------
+
+template<typename T>
+void
+StorageBuffer<T>::SetData(const size_t offset, const std::vector<T> &data) {
+  details::SetData(m_Id, offset, data.size() * sizeof(T), data.data());
 }

@@ -2,10 +2,10 @@
 #include "Math/PerlinNoise.hpp"
 #include "Math/Random.hpp"
 
-void
-GenerateTerrain(BrickMap &bm, const uint32 dims, const float invScale) {
+BrickMap
+GenerateTerrain(const uint32 dims, const float invScale) {
     constexpr float heightScale = 96.0f;
-    bm = BrickMap(vec3(), ivec3(dims, dims / 2, dims), 0.1f);
+    BrickMap bm(vec3(), ivec3(dims, dims / 2, dims), 0.1f);
     siv::PerlinNoise heightMap;
 
 
@@ -30,4 +30,6 @@ GenerateTerrain(BrickMap &bm, const uint32 dims, const float invScale) {
             }
         }
     }
+
+    return bm;
 }

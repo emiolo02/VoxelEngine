@@ -61,54 +61,24 @@ struct Triangle {
     }
 };
 
+struct Node {
+    BoundingBox boundingBox;
+    uint32 childIndex = 0;
+    std::vector<Triangle> triangles;
+    Color color = {};
+};
+
 class OctreeMesh {
 public:
-    struct Node {
-        Node() = default;
+    explicit OctreeMesh(const Mesh &mesh, uint32 depth);
 
-        Node(const OctreeMesh *octree, Node *parent)
-            : octree(octree), parent(parent) {
-        }
+    explicit OctreeMesh(const Model &model, uint32 depth);
 
-        ~Node() {
-            delete[] children;
-        }
-
-        void Draw();
-
-        //~Node() {
-        //    for (int i = 0; i < 8; ++i)
-        //        delete children[i];
-        //}
-
-        const OctreeMesh *octree = nullptr;
-        Node *parent = nullptr;
-        Node *children = nullptr;
-        bool isLeaf = false;
-        bool isFilled = false;
-        BoundingBox boundingBox;
-        Color color = {};
-
-        std::vector<Triangle> triangles;
-
-        void Subdivide(uint32 subdivisions);
-
-        void Linearize(uint32 level, const ivec3 &globalPosition, std::vector<Color> &arr);
-
-        void BrickMapify(uint32 level, const ivec3 &globalPosition, BrickMap &bm);
-
-        void Clear();
-    };
-
-    explicit OctreeMesh(const Mesh &mesh);
-
-    explicit OctreeMesh(const Model &model);
-
-    void Subdivide(uint32 subdivisions);
+    void Subdivide(uint32 nodeIndex, uint32 depth);
 
     void Clear();
 
-    void Draw();
+    void Draw() const;
 
     std::vector<Color> Linearize();
 
@@ -118,8 +88,13 @@ public:
     uint32 GetSize() const;
 
 private:
-    Node m_Root;
+    void FillBrickMap(Node *node, uint32 level, const ivec3 &globalPosition, BrickMap &bm);
+
+    void DrawNode(const Node *node, uint32 depth) const;
+
+    std::vector<Node> m_Nodes;
     uint32 m_Size = 0;
+    uint32 m_MaxDepth = 0;
 };
 
 class ModelBVH {
@@ -136,14 +111,16 @@ public:
         bool IsLeaf() const;
     };
 
-    ModelBVH(const Model &model, uint32 maxDepth = 32);
+    explicit ModelBVH(const Model &model, uint32 maxDepth = 32);
 
-    void Draw(int32 level) const;
+    void Draw(int32 level, vec3 scale = {1.0f, 1.0f, 1.0f});
 
 private:
     void Split(Node *node, uint32 depth);
 
     void DrawImpl(const Node *node, uint32 level, Color color) const;
+
+    vec3 m_DrawScale;
 
     uint32 m_MaxDepth = 0;
     std::vector<Node> m_Nodes;

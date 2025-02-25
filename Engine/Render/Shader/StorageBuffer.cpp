@@ -23,6 +23,13 @@ details::GetData(const uint32 id, const size_t offset, const size_t size, void *
 //------------------------------------------------------------------------------------------
 
 void
+details::SetData(const uint32 id, const size_t offset, const size_t size, const void *data) {
+  glNamedBufferSubData(id, offset, size, data);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
 details::Clear(const uint32 id) {
   glDeleteBuffers(1, &id);
 }

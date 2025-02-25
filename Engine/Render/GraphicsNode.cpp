@@ -14,6 +14,7 @@ GraphicsNode::GraphicsNode(const Mesh &mesh)
       m_Texture(mesh.image) {
     VertexBufferLayout layout;
     layout.Push<float>(3);
+    layout.Push<float>(3);
     layout.Push<float>(2);
     m_VertexArray.AddBuffer(m_VertexBuffer, layout);
 
@@ -28,7 +29,8 @@ GraphicsNode::Draw() const {
 
     s_Rasterizer.SetValue("projView", Camera::GetMainCamera()->GetProjView());
     s_Rasterizer.SetValue("model", m_Transform.GetMatrix());
-    s_Rasterizer.SetValue("color", vec4(0.5f));
+
+    m_Texture.BindTexture();
 
     m_VertexArray.Bind();
     m_VertexBuffer.Bind();

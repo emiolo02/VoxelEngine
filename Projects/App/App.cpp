@@ -78,29 +78,35 @@ App::Run() {
   Debug::Init();
 
 
-#define MODEL_PATH "assets/monkey.obj"
+#define MODEL_PATH "assets/dragon_vrip.ply"
 
   auto &model = ObjLoader::Get().Load(MODEL_PATH);
-  //ImageManager::Get().Save(1, "sponzatest.png");
-  //OctreeMesh octree(model);
-  //octree.Subdivide(8);
-  GraphicsNode graphicsNode(model.meshes[0]);
-  ModelBVH bvh(model);
+  //ImageManager::Get().Save(4, "sponzatest.png");
+  OctreeMesh octree(model, 11);
+
+  std::vector<GraphicsNode> graphicsNodes;
+  graphicsNodes.reserve(model.meshes.size());
+  for (const Mesh &mesh: model.meshes) {
+    GraphicsNode &node = graphicsNodes.emplace_back(mesh);
+    node.GetTransform().scale = vec3(0.001f);
+  }
+  //ModelBVH bvh(model, 10);
 
   ObjLoader::Get().Remove(MODEL_PATH);
 
-  //BrickMap brickMap = octree.CreateBrickMap(0.1f);
+  BrickMap brickMap = octree.CreateBrickMap(0.1f);
+  brickMap.PrintByteSize();
   //brickMap.PrintByteSize();
 
   //octree.Clear();
 
 
   Renderer renderer;
-  //renderer.SetBrickMap(&brickMap);
+  renderer.SetBrickMap(&brickMap);
 
-  //renderer.GetBrickGridBuffer().Upload(brickMap.GetGrid());
-  //renderer.GetSolidMaskBuffer().Upload(brickMap.GetBricks());
-  //renderer.GetBrickTextureBuffer().Upload(brickMap.GetBrickTextures());
+  renderer.GetBrickGridBuffer().Upload(brickMap.GetGrid());
+  renderer.GetSolidMaskBuffer().Upload(brickMap.GetBricks());
+  renderer.GetBrickTextureBuffer().Upload(brickMap.GetBrickTextures());
 
   int32 windowWidth, windowHeight;
   m_Window.GetSize(windowWidth, windowHeight);
@@ -119,9 +125,9 @@ App::Run() {
   m_Inspector.AddFloat("FXAA threshold max", 0.5f, 0.001f);
 
   m_Inspector.AddInt("BVH Depth");
-  glfwSwapInterval(1);
 
   float deltaSeconds = 0.0f;
+  glfwSwapInterval(1);
 
   while (m_Window.IsOpen()) {
     start = std::chrono::high_resolution_clock::now();
@@ -147,10 +153,15 @@ App::Run() {
 
 
     //-----------------
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    bvh.Draw(m_Inspector.GetInt("BVH Depth"));
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    ////bvh.Draw(m_Inspector.GetInt("BVH Depth"));
 
-    graphicsNode.Draw();
+    for (const auto &node: graphicsNodes) {
+      node.Draw();
+    }
+
+    //octree.Draw();
 
     Debug::RenderDebug(firstPersonCamera.GetProjView());
     Debug::ClearQueue();

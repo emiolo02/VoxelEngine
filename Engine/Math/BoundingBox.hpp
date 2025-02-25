@@ -11,7 +11,7 @@ struct BoundingBox {
 
     // Assuming size is positive
     BoundingBox(const vec3 &center, const float size)
-        : min(center - size), max(center + size) {
+        : min(center - size / 2.0f), max(center + size / 2.0f) {
     }
 
     void SetSize(const vec3 &newSize) {

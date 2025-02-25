@@ -16,9 +16,10 @@ ObjLoader::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
         const vec2 uv = mesh->mTextureCoords[0]
                             ? *reinterpret_cast<vec2 *>(&mesh->mTextureCoords[0][i])
                             : vec2(0.0f);
-
+        const vec3 normal = mesh->mNormals != nullptr ? *reinterpret_cast<vec3 *>(&mesh->mNormals[i]) : vec3(0.0f);
         vertices[i] = {
             *reinterpret_cast<vec3 *>(&mesh->mVertices[i]),
+            normal,
             uv
         };
     }
@@ -28,6 +29,30 @@ ObjLoader::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
         for (unsigned int j = 0; j < face.mNumIndices; ++j) {
             indices.push_back(face.mIndices[j]);
         }
+    }
+
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        Vertex &a = vertices[indices[i]];
+        Vertex &b = vertices[indices[i + 1]];
+        Vertex &c = vertices[indices[i + 2]];
+        const vec3 edge0 = b.position - a.position;
+        const vec3 edge1 = c.position - a.position;
+        a.normal = normalize(cross(edge0, edge1));
+        b.normal = normalize(cross(edge0, edge1));
+        c.normal = normalize(cross(edge0, edge1));
+        //if (a.normal == vec3(0)) {
+
+        //}
+        //if (b.normal == vec3(0)) {
+        //    const vec3 edge0 = a.position - b.position;
+        //    const vec3 edge1 = c.position - b.position;
+        //    b.normal = normalize(cross(edge0, edge1));
+        //}
+        //if (c.normal == vec3(0)) {
+        //    const vec3 edge0 = b.position - c.position;
+        //    const vec3 edge1 = a.position - c.position;
+        //    c.normal = normalize(cross(edge0, edge1));
+        //}
     }
 
     aiMaterial *mat = scene->mMaterials[mesh->mMaterialIndex];

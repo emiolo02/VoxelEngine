@@ -44,12 +44,18 @@ Texture::Texture(const Image &image) {
     m_Target = GL_TEXTURE_2D;
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_Id);
+
+    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_R, GL_ALPHA);
+    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_G, GL_BLUE);
+    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_B, GL_GREEN);
+    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_A, GL_RED);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, image.width, image.height, 0, GL_RGBA,
-                 GL_UNSIGNED_INT, image.pixels.data());
+                 GL_UNSIGNED_BYTE, image.pixels.data());
 }
 
 Texture::Texture(const Color *colors,

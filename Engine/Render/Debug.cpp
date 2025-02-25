@@ -303,7 +303,7 @@ namespace Debug {
 		//meshProgram = ShaderResource::Instance()->CreateProgram(
 		//	"../Shaders/BasicShader.vs",
 		//	"../Shaders/BasicShader.fs");
-		meshProgram.Load("shaders/rasterizer.vert", "shaders/rasterizer.frag");
+		meshProgram.Load("shaders/rasterizer.vert", "shaders/wireframe.frag");
 		InitLine();
 		InitBox();
 		InitPlane();
