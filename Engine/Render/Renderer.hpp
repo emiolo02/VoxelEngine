@@ -10,11 +10,15 @@ class Renderer {
 public:
     Renderer();
 
-    void Render() const;
+    void Render();
 
     void SetDimensions(int32 width, int32 height);
 
     const Texture &GetRenderTexture() const { return m_RenderTexture; }
+
+    void SetShowSteps(bool value);
+
+    void SetShowNormals(bool value);
 
     void SetBrickMap(BrickMap *brickMap) { m_BrickMap = brickMap; }
 
@@ -22,11 +26,16 @@ public:
     StorageBuffer<BrickMap::Brick> &GetSolidMaskBuffer() { return m_SolidMaskBuffer; }
     StorageBuffer<BrickMap::BrickTexture> &GetBrickTextureBuffer() { return m_BrickTextureBuffer; }
 
+    Shader &GetRaytraceShader() { return m_RaytraceBrickmap; }
+
 private:
     void Blit() const;
 
     int32 m_Width = 0, m_Height = 0;
     Texture m_RenderTexture;
+
+    bool m_ShowSteps = false;
+    bool m_ShowNormals = false;
 
     BrickMap *m_BrickMap = nullptr;
 

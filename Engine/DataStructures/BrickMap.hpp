@@ -4,7 +4,10 @@
 #include "Math/Color.hpp"
 #include <cstddef>
 
+#include "Math/Ray.hpp"
+
 #define EMPTY_BRICK 0xFFFFFFFF
+#define BRICK_DIMENSIONS 8
 #define BRICK_SIZE 512
 
 struct Model;
@@ -34,14 +37,14 @@ public:
   };
 
   struct BrickTexture {
-    Color voxels[BRICK_SIZE] = {};
+    math::Color voxels[BRICK_SIZE] = {};
   };
 
   BrickMap() = default;
 
   BrickMap(vec3 position, ivec3 dimensions, float voxelSize);
 
-  BrickMap(const vec3 &position, const std::vector<Color> &voxels, const ivec3 &dimensions, float voxelSize);
+  BrickMap(const vec3 &position, const std::vector<math::Color> &voxels, const ivec3 &dimensions, float voxelSize);
 
   BrickMap(const ivec3 &dimensions, float voxelSize);
 
@@ -49,28 +52,34 @@ public:
 
   void Fill();
 
-  bool Insert(uint32 x, uint32 y, uint32 z, Color color);
+  bool Insert(uint32 x, uint32 y, uint32 z, math::Color color);
 
   const std::vector<uint32> &GetGrid() const { return m_Grid; }
   const std::vector<Brick> &GetBricks() const { return m_Bricks; }
   const std::vector<BrickTexture> &GetBrickTextures() const { return m_Textures; }
-  const BoundingBox &GetBoundingBox() const { return m_BoundingBox; }
+  const math::BoundingBox &GetBoundingBox() const { return m_BoundingBox; }
   float GetVoxelSize() const { return m_VoxelSize; }
   const ivec3 &GetDimensions() const { return m_Dimensions; }
 
   void PrintByteSize() const;
 
-  size_t GetByteSize() const {
-    return m_Grid.size() * sizeof(uint32) +
-           m_Bricks.size() * sizeof(Brick) +
-           m_Textures.size() * sizeof(BrickTexture);
-  }
+  // Returns position of hit voxel.
+  std::optional<ivec3> RayCast(const math::Ray &ray);
+
+  std::tuple<uint32 &, Brick &, BrickTexture &> GetHierarchy(const ivec3 &position);
+
+  std::vector<math::BoundingBox> hitGridCells;
 
 private:
+  std::optional<ivec3> TraverseCoarse(const math::Ray &ray);
+
+  std::optional<ivec3> TraverseFine(const ivec3 &brickPosition, const math::Ray &ray,
+                                    const math::BoundingBox &brickBounds);
+
   std::vector<uint32> m_Grid;
   std::vector<Brick> m_Bricks;
   std::vector<BrickTexture> m_Textures;
-  BoundingBox m_BoundingBox;
+  math::BoundingBox m_BoundingBox;
   ivec3 m_Dimensions = ivec3();
   float m_VoxelSize = 1.0f;
   int m_VoxelCount = 0;

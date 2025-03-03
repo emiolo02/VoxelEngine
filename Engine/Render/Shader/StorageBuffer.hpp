@@ -9,6 +9,8 @@ namespace details {
 
   void SetData(uint32, size_t, size_t, const void *);
 
+  void SetElement(uint32, size_t, size_t, const void *);
+
   void Clear(uint32);
 
   void Bind(uint32, uint32);
@@ -32,6 +34,8 @@ public:
   std::vector<T> GetData(size_t offset, size_t num) const;
 
   void SetData(size_t offset, const std::vector<T> &data);
+
+  void SetData(size_t index, const T &element);
 
   size_t GetSize() const { return m_Size; }
 
@@ -97,5 +101,13 @@ StorageBuffer<T>::GetData(const size_t offset, const size_t num) const {
 template<typename T>
 void
 StorageBuffer<T>::SetData(const size_t offset, const std::vector<T> &data) {
-  details::SetData(m_Id, offset, data.size() * sizeof(T), data.data());
+  details::SetData(m_Id, offset * sizeof(T), data.size() * sizeof(T), data.data());
+}
+
+//------------------------------------------------------------------------------------------
+
+template<typename T>
+void
+StorageBuffer<T>::SetData(const size_t index, const T &element) {
+  details::SetElement(m_Id, index * sizeof(T), sizeof(T), &element);
 }

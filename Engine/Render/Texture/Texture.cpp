@@ -1,9 +1,9 @@
 #include "Texture.hpp"
 
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include <glad/glad.h>
 
 #include "Image.hpp"
+#include "stb_image.h"
 
 Texture::Texture(Texture &&other) noexcept {
     m_Id = other.m_Id;
@@ -12,6 +12,8 @@ Texture::Texture(Texture &&other) noexcept {
     other.m_Id = 0;
     other.m_Target = 0;
 }
+
+//------------------------------------------------------------------------------------------
 
 Texture &
 Texture::operator=(Texture &&other) noexcept {
@@ -26,6 +28,8 @@ Texture::operator=(Texture &&other) noexcept {
     return *this;
 }
 
+//------------------------------------------------------------------------------------------
+
 Texture::Texture(const int32 width, const int32 height) {
     glGenTextures(1, &m_Id);
     glActiveTexture(GL_TEXTURE0);
@@ -38,6 +42,36 @@ Texture::Texture(const int32 width, const int32 height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA,
                  GL_FLOAT, nullptr);
 }
+
+//------------------------------------------------------------------------------------------
+
+Texture::Texture(const std::string &path) {
+    int width, height, numChannels;
+    stbi_set_flip_vertically_on_load(true);
+    uint8 *imageData = stbi_load(path.c_str(), &width, &height, &numChannels, 0);
+    assert(imageData);
+
+    m_Width = width;
+    m_Height = height;
+    m_NumChannels = numChannels;
+
+    glGenTextures(1, &m_Id);
+    glActiveTexture(GL_TEXTURE0);
+    m_Target = GL_TEXTURE_2D;
+    glBindTexture(GL_TEXTURE_2D, m_Id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    const GLenum format = numChannels == 4 ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, format,
+                 GL_UNSIGNED_INT, imageData);
+
+    stbi_image_free(imageData);
+}
+
+//------------------------------------------------------------------------------------------
 
 Texture::Texture(const Image &image) {
     glGenTextures(1, &m_Id);
@@ -57,6 +91,8 @@ Texture::Texture(const Image &image) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, image.width, image.height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, image.pixels.data());
 }
+
+//------------------------------------------------------------------------------------------
 
 Texture::Texture(const Color *colors,
                  const int32 width,
@@ -83,15 +119,21 @@ Texture::Texture(const Color *colors,
                  colors);
 }
 
+//------------------------------------------------------------------------------------------
+
 Texture::~Texture() {
     if (m_Id != 0)
         glDeleteTextures(1, &m_Id);
 }
 
+//------------------------------------------------------------------------------------------
+
 void
 Texture::BindTexture() const {
     glBindTexture(m_Target, m_Id);
 }
+
+//------------------------------------------------------------------------------------------
 
 void
 Texture::BindImageTexture() const {

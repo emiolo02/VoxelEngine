@@ -1,4 +1,4 @@
-#define CORRECTION 0.0001
+#define CORRECTION 0.001
 
 struct Ray {
     vec3 origin;
@@ -23,7 +23,7 @@ DecodeColor(uint c) {
 
 vec4
 DecodeSteps(uint s, uint maxSteps) {
-    return vec4(s) / maxSteps;
+    return vec4(vec3(s) / maxSteps, 1.0);
 }
 
 bool
@@ -62,7 +62,7 @@ InBounds(ivec3 pos, ivec3 bounds) {
 }
 
 void
-InitDDA(float voxelSize, vec3 rayStart, vec3 rayDir, vec3 invRayDir, out ivec3 currentPos, out vec3 tMax, out vec3 tDelta, out ivec3 gridStep) {
+InitDDA(float voxelSize, inout vec3 rayStart, vec3 rayDir, vec3 invRayDir, out ivec3 currentPos, out vec3 tMax, out vec3 tDelta, out ivec3 gridStep) {
     rayStart /= voxelSize;
     currentPos = ivec3(floor(rayStart));
     vec3 signDir = sign(rayDir);
@@ -72,11 +72,10 @@ InitDDA(float voxelSize, vec3 rayStart, vec3 rayDir, vec3 invRayDir, out ivec3 c
 }
 
 void
-StepDDA(vec3 tDelta, ivec3 gridStep, inout vec3 normal, inout vec3 tMax, inout ivec3 currentPos) {
-    bvec3 mask = lessThanEqual(tMax.xyz, min(tMax.yzx, tMax.zxy));
-    normal = ivec3(mask) * -gridStep;
-    tMax += ivec3(mask) * tDelta;
-    currentPos += ivec3(mask) * gridStep;
+StepDDA(vec3 tDelta, ivec3 gridStep, inout vec3 tMax, inout ivec3 currentPos, out bvec3 stepMask) {
+    stepMask = lessThanEqual(tMax.xyz, min(tMax.yzx, tMax.zxy));
+    tMax += ivec3(stepMask) * tDelta;
+    currentPos += ivec3(stepMask) * gridStep;
 }
 
 uint

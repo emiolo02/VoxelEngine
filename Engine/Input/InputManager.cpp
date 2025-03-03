@@ -39,7 +39,12 @@ namespace Input {
 
   void
   InputManager::HandleMouseScroll(float64 x, float64 y) {
-    mouse.m_DeltaScroll = (int8) y;
+    if (y > 0.0)
+      mouse.m_DeltaScroll = 1;
+    else if (y < 0.0)
+      mouse.m_DeltaScroll = -1;
+    else
+      mouse.m_DeltaScroll = 0;
   }
 
   void

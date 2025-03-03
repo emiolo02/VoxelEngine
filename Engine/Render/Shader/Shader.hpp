@@ -24,39 +24,39 @@ public:
 
   uint32 GetProgram() const;
 
-  void SetValue(const string &name, bool value) const;
+  void SetValue(const string &name, bool value);
 
-  void SetValue(const string &name, int32 value) const;
+  void SetValue(const string &name, int32 value);
 
-  void SetValue(const string &name, uint32 value) const;
+  void SetValue(const string &name, uint32 value);
 
-  void SetValue(const string &name, float value) const;
+  void SetValue(const string &name, float value);
 
-  void SetValue(const string &name, const vec2 &value) const;
+  void SetValue(const string &name, const vec2 &value);
 
-  void SetValue(const string &name, const vec3 &value) const;
+  void SetValue(const string &name, const vec3 &value);
 
-  void SetValue(const string &name, const vec4 &value) const;
+  void SetValue(const string &name, const vec4 &value);
 
-  void SetValue(const string &name, const mat3 &value) const;
+  void SetValue(const string &name, const mat3 &value);
 
-  void SetValue(const string &name, const mat4 &value) const;
+  void SetValue(const string &name, const mat4 &value);
 
-  void SetValue(const string &name, const std::vector<int32> &value) const;
+  void SetValue(const string &name, const std::vector<int32> &value);
 
-  void SetValue(const string &name, const std::vector<uint32> &value) const;
+  void SetValue(const string &name, const std::vector<uint32> &value);
 
-  void SetValue(const string &name, const std::vector<float> &value) const;
+  void SetValue(const string &name, const std::vector<float> &value);
 
-  void SetValue(const string &name, const std::vector<vec2> &value) const;
+  void SetValue(const string &name, const std::vector<vec2> &value);
 
-  void SetValue(const string &name, const std::vector<vec3> &value) const;
+  void SetValue(const string &name, const std::vector<vec3> &value);
 
-  void SetValue(const string &name, const std::vector<vec4> &value) const;
+  void SetValue(const string &name, const std::vector<vec4> &value);
 
-  void SetValue(const string &name, const std::vector<mat3> &value) const;
+  void SetValue(const string &name, const std::vector<mat3> &value);
 
-  void SetValue(const string &name, const std::vector<mat4> &value) const;
+  void SetValue(const string &name, const std::vector<mat4> &value);
 
 private:
   static string LoadShader(const string &path);
@@ -65,9 +65,11 @@ private:
 
   static string ErrorLog(uint32 shader);
 
-  static int32 GetUniform(uint32 program, const string &name);
+  int32 GetUniform(uint32 program, const string &name);
+
+  uint32 m_Id = 0;
+
+  std::unordered_map<string, int32> m_UniformCache;
 
   static std::unordered_map<string, string> s_ShaderCache;
-  static std::unordered_map<string, int32> s_UniformCache;
-  uint32 m_Id = 0;
 };

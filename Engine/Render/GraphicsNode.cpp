@@ -1,6 +1,6 @@
 #include "GraphicsNode.hpp"
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 #include "Camera.hpp"
 #include "Model/Model.hpp"

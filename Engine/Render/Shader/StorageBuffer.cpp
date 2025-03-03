@@ -1,5 +1,5 @@
 #include "StorageBuffer.hpp"
-#include "GL/glew.h"
+#include <glad/glad.h>
 
 void
 details::CreateBuffer(uint32 &id) {
@@ -25,6 +25,13 @@ details::GetData(const uint32 id, const size_t offset, const size_t size, void *
 void
 details::SetData(const uint32 id, const size_t offset, const size_t size, const void *data) {
   glNamedBufferSubData(id, offset, size, data);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+details::SetElement(const uint32 id, const size_t index, const size_t size, const void *element) {
+  glNamedBufferSubData(id, index, size, element);
 }
 
 //------------------------------------------------------------------------------------------

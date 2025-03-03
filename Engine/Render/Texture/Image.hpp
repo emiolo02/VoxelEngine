@@ -3,7 +3,7 @@
 #include "Math/Color.hpp"
 
 struct Image {
-    std::vector<Color> pixels;
+    std::vector<math::Color> pixels;
     int32 width = 0, height = 0;
     int32 numChannels = 0;
 

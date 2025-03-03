@@ -1,5 +1,5 @@
 #include "IndexBuffer.hpp"
-#include "GL/glew.h"
+#include <glad/glad.h>
 
 IndexBuffer::IndexBuffer(const uint32 *data, size_t size)
   : m_Size(size) {

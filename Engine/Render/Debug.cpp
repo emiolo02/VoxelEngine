@@ -1,5 +1,5 @@
 #include "Debug.hpp"
-#include "GL/glew.h"
+#include <glad/glad.h>
 #include "Shader/Shader.hpp"
 #include <queue>
 
@@ -37,6 +37,8 @@ namespace Debug {
 	static Shape shape[NUM_SHAPES];
 
 	static std::queue<DrawCmd *> commands;
+
+	static Shader lineProgram;
 
 	static Shader meshProgram;
 
@@ -303,6 +305,7 @@ namespace Debug {
 		//meshProgram = ShaderResource::Instance()->CreateProgram(
 		//	"../Shaders/BasicShader.vs",
 		//	"../Shaders/BasicShader.fs");
+		lineProgram.Load("shaders/LineDraw.vert", "shaders/LineDraw.frag");
 		meshProgram.Load("shaders/rasterizer.vert", "shaders/wireframe.frag");
 		InitLine();
 		InitBox();
@@ -382,25 +385,25 @@ namespace Debug {
 	}
 
 	void RenderLine(DrawCmd *cmd, const mat4 &projView) {
-		//LineCmd *lineCmd = (LineCmd *) cmd;
+		LineCmd *lineCmd = (LineCmd *) cmd;
 
-		//glUseProgram(lineProgram);
-		//glBindVertexArray(shape[DEBUG_LINE].vao);
+		lineProgram.Bind();
+		glBindVertexArray(shape[DEBUG_LINE].vao);
 
-		//vec4 v0 = vec4(lineCmd->start.x, lineCmd->start.y, lineCmd->start.z, 1);
-		//vec4 v1 = vec4(lineCmd->end.x, lineCmd->end.y, lineCmd->end.z, 1);
+		const vec4 v0 = vec4(lineCmd->start.x, lineCmd->start.y, lineCmd->start.z, 1);
+		const vec4 v1 = vec4(lineCmd->end.x, lineCmd->end.y, lineCmd->end.z, 1);
 
-		//UniformMat4("projView", projView, lineProgram);
-		//UniformVec4("v0pos", v0, lineProgram);
-		//UniformVec4("v1pos", v1, lineProgram);
-		//UniformVec4("color", lineCmd->color, lineProgram);
+		lineProgram.SetValue("projView", projView);
+		lineProgram.SetValue("v0pos", v0);
+		lineProgram.SetValue("v1pos", v1);
+		lineProgram.SetValue("color", lineCmd->color);
 
-		//glPolygonMode(GL_FRONT, GL_LINE);
-		//glLineWidth(lineCmd->lineWidth);
+		glPolygonMode(GL_FRONT, GL_LINE);
+		glLineWidth(lineCmd->lineWidth);
 
-		//glDrawArrays(GL_LINES, 0, 2);
+		glDrawArrays(GL_LINES, 0, 2);
 
-		//glPolygonMode(GL_FRONT, GL_FILL);
+		glPolygonMode(GL_FRONT, GL_FILL);
 	}
 
 	void RenderMesh(DrawCmd *cmd, const mat4 &projView) {
@@ -427,11 +430,15 @@ namespace Debug {
 			DrawCmd *cmd = commands.front();
 			commands.pop();
 
-			if (cmd->shape == DEBUG_LINE)
-				RenderLine(cmd, projView);
-			else
-				RenderMesh(cmd, projView);
-
+			switch (cmd->shape) {
+				case DEBUG_LINE:
+					RenderLine(cmd, projView);
+					break;
+				case DEBUG_BOX:
+					RenderMesh(cmd, projView);
+					break;
+				default: break;
+			}
 
 			delete cmd;
 		}

@@ -7,8 +7,11 @@ function(ensure_installed name url)
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${name}
             DOWNLOAD_EXTRACT_TIMESTAMP true
     )
-
-    FetchContent_Populate(${name})
+    FetchContent_GetProperties(${name})
+    if (NOT "${name}_POPULATED")
+        set(FETCHCONTENT_QUIET NO)
+        FetchContent_Populate(${name})
+    endif ()
 
 endfunction()
 
@@ -17,13 +20,18 @@ add_library(libs INTERFACE)
 
 ### glew ###
 
-ensure_installed(glew https://github.com/Perlmint/glew-cmake/archive/refs/tags/glew-cmake-2.2.0.zip)
+#ensure_installed(glew https://github.com/Perlmint/glew-cmake/archive/refs/tags/glew-cmake-2.2.0.zip)
+#
+#set(glew-cmake_BUILD_SHARED OFF)
+#set(ONLY_LIBS ON)
+#
+#add_subdirectory(glew)
+#target_link_libraries(libs INTERFACE libglew_static)
 
-set(glew-cmake_BUILD_SHARED OFF)
-set(ONLY_LIBS ON)
+add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/src/glad.c)
+target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include/)
 
-add_subdirectory(glew)
-target_link_libraries(libs INTERFACE libglew_static)
+target_link_libraries(libs INTERFACE glad)
 
 ### glfw ###
 
@@ -33,6 +41,8 @@ set(GLFW_BUILD_EXAMPLES OFF)
 set(GLFW_BUILD_TESTS OFF)
 set(GLFW_BUILD_DOCS OFF)
 set(GLFW_INSTALL OFF)
+#set(GLFW_BUILD_WAYLAND ON)
+#set(GLFW_BUILD_X11 OFF)
 
 add_subdirectory(glfw)
 target_include_directories(libs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/glfw/include)

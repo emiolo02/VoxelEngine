@@ -16,10 +16,10 @@ ImageManager::Save(const Image &image, const char *path) const {
 }
 
 void
-ImageManager::Save(uint32 imageId, const char *path) const {
+ImageManager::Save(const uint32 imageId, const char *path) const {
     const Image &image = *m_ImagesById.at(imageId);
     stbi_flip_vertically_on_write(true);
-    std::vector<Color> toWrite(image.pixels.size());
+    std::vector<math::Color> toWrite(image.pixels.size());
     for (int i = 0; i < image.pixels.size(); ++i) {
         toWrite[i] = {
             image.pixels[i].a,
@@ -54,7 +54,7 @@ ImageManager::Load(const std::string &path) {
 
     if (!data) {
         Image &image = m_Images[path] = {
-                           {0xFFFFFFFF},
+                           {math::Color(0xFFFFFFFF)},
                            1, 1, 4,
                            m_NextId++
                        };
@@ -63,7 +63,7 @@ ImageManager::Load(const std::string &path) {
     }
 
     Image &image = m_Images[path] = {
-                       std::vector<Color>(width * height),
+                       std::vector<math::Color>(width * height),
                        width, height, numChannels,
                        m_NextId++
                    };

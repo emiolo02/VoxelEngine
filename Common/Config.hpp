@@ -5,6 +5,7 @@
 #include "geometric.hpp"
 #include "glm.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
+#define GLM_SWIZZLE
 #include "gtx/string_cast.hpp"
 #include "glm.hpp"
 #include <cassert>

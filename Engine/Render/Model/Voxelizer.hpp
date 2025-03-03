@@ -62,10 +62,10 @@ struct Triangle {
 };
 
 struct Node {
-    BoundingBox boundingBox;
+    math::BoundingBox boundingBox;
     uint32 childIndex = 0;
     std::vector<Triangle> triangles;
-    Color color = {};
+    math::Color color = {};
 };
 
 class OctreeMesh {
@@ -80,7 +80,7 @@ public:
 
     void Draw() const;
 
-    std::vector<Color> Linearize();
+    std::vector<math::Color> Linearize();
 
     BrickMap CreateBrickMap(float voxelSize);
 
@@ -97,34 +97,4 @@ private:
     uint32 m_MaxDepth = 0;
 };
 
-class ModelBVH {
-public:
-    struct Node {
-        Node(uint32 triangleIndex);
-
-        BoundingBox boundingBox;
-
-        uint32 childIndex = 0;
-        uint32 triangleIndex = 0;
-        uint32 triangleCount = 0;
-
-        bool IsLeaf() const;
-    };
-
-    explicit ModelBVH(const Model &model, uint32 maxDepth = 32);
-
-    void Draw(int32 level, vec3 scale = {1.0f, 1.0f, 1.0f});
-
-private:
-    void Split(Node *node, uint32 depth);
-
-    void DrawImpl(const Node *node, uint32 level, Color color) const;
-
-    vec3 m_DrawScale;
-
-    uint32 m_MaxDepth = 0;
-    std::vector<Node> m_Nodes;
-    std::vector<Triangle> m_Triangles;
-
-    friend struct Node;
-};
+BrickMap Voxelize(const Model &model, uint32 subdivisions, float voxelSize);

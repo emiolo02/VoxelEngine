@@ -1,44 +1,27 @@
 #pragma once
 
-struct BoundingBox {
-    vec3 min = {}, max = {};
+namespace math {
+    struct Ray;
 
-    BoundingBox() = default;
+    struct BoundingBox {
+        vec3 min = {}, max = {};
 
-    BoundingBox(const vec3 &min, const vec3 &max)
-        : min(min), max(max) {
-    }
+        BoundingBox() = default;
 
-    // Assuming size is positive
-    BoundingBox(const vec3 &center, const float size)
-        : min(center - size / 2.0f), max(center + size / 2.0f) {
-    }
+        BoundingBox(const vec3 &min, const vec3 &max);
 
-    void SetSize(const vec3 &newSize) {
-        const vec3 c = GetCenter();
-        min = c - newSize;
-        max = c + newSize;
-    }
+        BoundingBox(const vec3 &center, float size);
 
-    vec3 GetCenter() const {
-        return (min + max) * 0.5f;
-    }
+        void SetSize(const vec3 &newSize);
 
-    vec3 GetSize() const {
-        return max - min;
-    }
+        vec3 GetCenter() const;
 
-    void GrowToInclude(const vec3 &point) {
-        min = {
-            std::min(min.x, point.x),
-            std::min(min.y, point.y),
-            std::min(min.z, point.z)
-        };
-        max = {
-            std::max(max.x, point.x),
-            std::max(max.y, point.y),
-            std::max(max.z, point.z)
-        };
-    }
-};
+        vec3 GetSize() const;
 
+        void GrowToInclude(const vec3 &point);
+
+        bool Intersect(const Ray &ray) const;
+
+        bool Intersect(const Ray &ray, float &tNear, float &tFar) const;
+    };
+}

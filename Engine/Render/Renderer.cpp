@@ -1,7 +1,7 @@
 #include "Renderer.hpp"
 
 #include "Camera.hpp"
-#include "GL/glew.h"
+#include <glad/glad.h>
 
 #include "Vertex/VertexArray.hpp"
 #include "Vertex/IndexBuffer.hpp"
@@ -49,7 +49,7 @@ Renderer::Renderer()
 //------------------------------------------------------------------------------------------
 
 void
-Renderer::Render() const {
+Renderer::Render() {
     if (m_Width <= 0 || m_Height <= 0) {
         std::cerr << "Invalid renderer dimensions.\n"
                 << "\tWidth: " << m_Width << '\n'
@@ -84,11 +84,14 @@ Renderer::Render() const {
     m_SolidMaskBuffer.Bind();
     m_BrickTextureBuffer.Bind();
 
+    m_RaytraceBrickmap.SetValue("u_ShowSteps", m_ShowSteps);
+    m_RaytraceBrickmap.SetValue("u_ShowNormals", m_ShowNormals);
+
     m_RaytraceBrickmap.SetValue("u_CameraPosition", mainCamera->GetPosition());
     m_RaytraceBrickmap.SetValue("u_InvProjection", mainCamera->GetInvProjection());
     m_RaytraceBrickmap.SetValue("u_InvView", mainCamera->GetInvView());
 
-    const BoundingBox &boundingBox = m_BrickMap->GetBoundingBox();
+    const math::BoundingBox &boundingBox = m_BrickMap->GetBoundingBox();
 
     m_RaytraceBrickmap.SetValue("u_GridMinBounds", boundingBox.min);
     m_RaytraceBrickmap.SetValue("u_GridMaxBounds", boundingBox.max);
@@ -100,9 +103,6 @@ Renderer::Render() const {
     m_RaytraceBrickmap.SetValue("u_GridYSize", dimensions.y);
     m_RaytraceBrickmap.SetValue("u_GridZSize", dimensions.z);
     m_RaytraceBrickmap.SetValue("u_Resolution", vec2(m_Width, m_Height));
-
-    m_RaytraceBrickmap.SetValue("u_ShowSteps", false);
-    m_RaytraceBrickmap.SetValue("u_ShowNormals", false);
 
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -125,6 +125,20 @@ Renderer::SetDimensions(const int32 width, const int32 height) {
     }
     m_Width = width, m_Height = height;
     m_RenderTexture = std::move(Texture(m_Width, m_Height));
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Renderer::SetShowSteps(const bool value) {
+    m_ShowSteps = value;
+}
+
+//------------------------------------------------------------------------------------------
+
+void
+Renderer::SetShowNormals(const bool value) {
+    m_ShowNormals = value;
 }
 
 //------------------------------------------------------------------------------------------
