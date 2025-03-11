@@ -94,7 +94,7 @@ OctreeMesh::OctreeMesh(const Mesh &mesh, const uint32 depth)
 
     math::BoundingBox rootBounds = {vec3(FLT_MAX), vec3(-FLT_MAX)};
 
-    const uint32 imageId = mesh.image.id;
+    const uint32 imageId = mesh.imageId;
 
     for (int i = 0; i < mesh.indices.size(); i += 3) {
         const Triangle &triangle = triangles[i / 3] = {
@@ -129,13 +129,25 @@ OctreeMesh::OctreeMesh(const Mesh &mesh, const uint32 depth)
     Subdivide(0, 0);
 }
 
+//std::string
+//PrefixedSize(const float size) {
+//    if (size > 1e9f)
+//        return std::to_string(size / 1e9f) + " gb";
+//    if (size > 1e6f)
+//        return std::to_string(size / 1e6f) + " mb";
+//    if (size > 1e3f)
+//        return std::to_string(size / 1e3f) + " kb";
+//
+//    return std::to_string(size) + " b";
+//}
+
 OctreeMesh::OctreeMesh(const Model &model, const uint32 depth)
     : m_MaxDepth(depth) {
     std::vector<Triangle> triangles;
     math::BoundingBox rootBounds = {vec3(FLT_MAX), vec3(-FLT_MAX)};
 
     for (auto &mesh: model.meshes) {
-        const uint32 imageId = mesh.image.id;
+        const uint32 imageId = mesh.imageId;
 
         for (unsigned i = 0; i < mesh.indices.size(); i += 3) {
             const Triangle &triangle = triangles.emplace_back(
@@ -171,48 +183,33 @@ OctreeMesh::OctreeMesh(const Model &model, const uint32 depth)
     std::cout << "Subdividing mesh.\n";
     Subdivide(0, 0);
     std::cout << "Number of nodes: " << m_Nodes.size() << '\n';
+    std::cout << "\tSize: " << PrefixedSize(m_Nodes.size() * sizeof(Node)) << '\n';
 }
 
 void
 OctreeMesh::Subdivide(const uint32 nodeIndex, const uint32 depth) {
     if (depth == m_MaxDepth) {
         Node &node = m_Nodes[nodeIndex];
-        //node.color = {255, 255, 255, 255};
+        node.color = math::Color(0xFFFFFFFF);
         //return;
         for (const auto &triangle: node.triangles) {
             float b0, b1, b2;
             if (triangle.PointInTriangle(node.boundingBox.GetCenter(), &b0, &b1, &b2)) {
-                const Image &image = ImageManager::Get().GetImage(triangle.imageId);
-                const vec2 uv = {
-                    b0 * triangle.a.uv.x + b1 * triangle.b.uv.x + b2 * triangle.c.uv.x,
-                    b0 * triangle.a.uv.y + b1 * triangle.b.uv.y + b2 * triangle.c.uv.y
-                };
+                if (triangle.imageId == -1) {
+                    node.color = math::Color(0xFFFFFFFF);
+                } else {
+                    const Image &image = ImageManager::Get().GetImage(triangle.imageId);
+                    const vec2 uv = {
+                        b0 * triangle.a.uv.x + b1 * triangle.b.uv.x + b2 * triangle.c.uv.x,
+                        b0 * triangle.a.uv.y + b1 * triangle.b.uv.y + b2 * triangle.c.uv.y
+                    };
 
-                //uv = {
-                //    std::fmod(uv.x, 1.0f),
-                //    std::fmod(uv.y, 1.0f)
-                //};
-
-                const int imagex = static_cast<int>(uv.x * image.width) % image.width;
-                const int imagey = static_cast<int>(uv.y * image.height) % image.height;
-                //node.color = {
-                //    static_cast<uint8>(uv.x * 255),
-                //    static_cast<uint8>(uv.y * 255),
-                //    static_cast<uint8>(triangle.imageId),
-                //    255
-                //};
-                node.color = image.pixels[imagex + imagey * image.height];
-
+                    const int imagex = static_cast<int>(fract(uv.x) * image.width);
+                    const int imagey = static_cast<int>(fract(uv.y) * image.height);
+                    node.color = image.pixels[imagex + imagey * image.height];
+                }
                 break;
             }
-        }
-        if (node.color.data == 0) {
-            const Triangle &triangle = node.triangles[0];
-            const Image &image = ImageManager::Get().GetImage(triangle.imageId);
-
-            const int imagex = static_cast<int>(triangle.a.uv.x * image.width) % image.width;
-            const int imagey = static_cast<int>(triangle.a.uv.y * image.height) % image.height;
-            node.color = image.pixels[imagex + imagey * image.height];
         }
 
         node.triangles.clear();
@@ -300,16 +297,26 @@ OctreeMesh::DrawNode(const Node *node, const uint32 depth) const {
 }
 
 BrickMap
-Voxelize(const Model &model, const uint32 subdivisions, const float voxelSize) {
-    OctreeMesh octree(model, subdivisions);
-    return octree.CreateBrickMap(voxelSize);
-}
-
-BrickMap
 OctreeMesh::CreateBrickMap(const float voxelSize) {
     std::cout << "Creating brickmap.\n";
     BrickMap bm(ivec3(m_Size), voxelSize);
     FillBrickMap(&m_Nodes[0], 0, {0, 0, 0}, bm);
+    return bm;
+}
+
+BrickMap
+OctreeMesh::CreateBrickMap(const float voxelSize, const math::Color color) {
+    std::cout << "Creating brickmap.\n";
+
+    BrickMap bm(ivec3(m_Size), voxelSize);
+
+    const uint32 textureIndex = bm.GetBrickTextures().size();
+    auto &texture = bm.GetBrickTextures().emplace_back();
+    for (uint32 i = 0; i < BRICK_SIZE; ++i) {
+        texture.voxels[i] = color;
+    }
+
+    FillBrickMap(&m_Nodes[0], 0, {0, 0, 0}, bm, textureIndex);
     return bm;
 }
 
@@ -320,17 +327,18 @@ OctreeMesh::GetSize() const {
 }
 
 void
-OctreeMesh::FillBrickMap(Node *node, const uint32 level, const ivec3 &globalPosition, BrickMap &bm) {
-    if (node->color.a > 0) {
+OctreeMesh::FillBrickMap(const Node *node,
+                         const uint32 level,
+                         const ivec3 &globalPosition,
+                         BrickMap &bm) {
+    if (node->color.data) {
         const uint32 voxelSize = m_Size >> level;
 
         for (uint32 z = 0; z < voxelSize; ++z) {
             for (uint32 y = 0; y < voxelSize; ++y) {
                 for (uint32 x = 0; x < voxelSize; ++x) {
                     bm.Insert(
-                        globalPosition.x + x,
-                        globalPosition.y + y,
-                        globalPosition.z + z,
+                        globalPosition + ivec3(x, y, z),
                         node->color
                     );
                 }
@@ -350,4 +358,50 @@ OctreeMesh::FillBrickMap(Node *node, const uint32 level, const ivec3 &globalPosi
         const int z = globalPosition.z + (i & 4 ? voxelSize / 2 : 0);
         FillBrickMap(&m_Nodes[node->childIndex + i], level + 1, {x, y, z}, bm);
     }
+}
+
+void OctreeMesh::FillBrickMap(const Node *node,
+                              const uint32 level,
+                              const ivec3 &globalPosition,
+                              BrickMap &bm,
+                              const uint32 textureIndex) {
+    if (node->color.data) {
+        const uint32 voxelSize = m_Size >> level;
+
+        for (uint32 z = 0; z < voxelSize; ++z) {
+            for (uint32 y = 0; y < voxelSize; ++y) {
+                for (uint32 x = 0; x < voxelSize; ++x) {
+                    bm.Insert(
+                        globalPosition + ivec3(x, y, z),
+                        textureIndex
+                    );
+                }
+            }
+        }
+        return;
+    }
+
+    if (node->childIndex == 0) {
+        return;
+    }
+
+    for (uint32 i = 0; i < 8; ++i) {
+        const uint32 voxelSize = m_Size >> level;
+        const int x = globalPosition.x + (i & 1 ? voxelSize / 2 : 0);
+        const int y = globalPosition.y + (i & 2 ? voxelSize / 2 : 0);
+        const int z = globalPosition.z + (i & 4 ? voxelSize / 2 : 0);
+        FillBrickMap(&m_Nodes[node->childIndex + i], level + 1, {x, y, z}, bm, textureIndex);
+    }
+}
+
+BrickMap
+Voxelize(const Model &model, const uint32 subdivisions, const float voxelSize) {
+    OctreeMesh octree(model, subdivisions);
+    return octree.CreateBrickMap(voxelSize);
+}
+
+BrickMap
+Voxelize(const Model &model, const uint32 subdivisions, const float voxelSize, const math::Color color) {
+    OctreeMesh octree(model, subdivisions);
+    return octree.CreateBrickMap(voxelSize, color);
 }

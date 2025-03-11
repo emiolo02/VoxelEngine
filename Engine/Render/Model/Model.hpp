@@ -15,7 +15,7 @@ struct Vertex {
 struct Mesh {
     std::vector<Vertex> vertices;
     std::vector<uint32> indices;
-    const Image &image;
+    int32 imageId = -1;
 };
 
 struct Model {

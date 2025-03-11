@@ -1,5 +1,5 @@
 #include "VertexArray.hpp"
-#include <glad/glad.h>
+#include "GL/glew.h"
 
 VertexArray::VertexArray() {
   glGenVertexArrays(1, &m_Id);

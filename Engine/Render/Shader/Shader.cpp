@@ -1,5 +1,5 @@
 #include "Shader.hpp"
-#include <glad/glad.h>
+#include "GL/glew.h"
 #include <fstream>
 #include <sstream>
 
@@ -31,6 +31,8 @@ Shader::~Shader() {
     glDeleteProgram(m_Id);
   }
 }
+
+//------------------------------------------------------------------------------------------
 
 Shader &
 Shader::operator=(Shader &&other) noexcept {

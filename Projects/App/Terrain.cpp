@@ -20,13 +20,13 @@ GenerateTerrain(const uint32 dims, const float invScale) {
             const uint8 gg = 124 + static_cast<uint8>(math::random::RandomFloat() * 44);
             const uint8 gb = 24 + static_cast<uint8>(math::random::RandomFloat() * 24);
             const math::Color grass = {gr, gg, gb, 255};
-            bm.Insert(x, y, z, grass);
+            bm.Insert({x, y, z}, grass);
             while (y-- > 0) {
                 const uint8 dr = 80 + static_cast<uint8>(math::random::RandomFloat() * 24);
                 const uint8 dg = 30 + static_cast<uint8>(math::random::RandomFloat() * 24);
                 const uint8 db = 10 + static_cast<uint8>(math::random::RandomFloat() * 12);
                 const math::Color dirt = {dr, dg, db, 255};
-                bm.Insert(x, y, z, dirt);
+                bm.Insert({x, y, z}, dirt);
             }
         }
     }

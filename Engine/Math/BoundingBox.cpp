@@ -17,7 +17,8 @@ namespace math {
 
     //------------------------------------------------------------------------------------------
 
-    void BoundingBox::SetSize(const vec3 &newSize) {
+    void
+    BoundingBox::SetSize(const vec3 &newSize) {
         const vec3 c = GetCenter();
         min = c - newSize * 0.5f;
         max = c + newSize * 0.5f;
@@ -25,19 +26,31 @@ namespace math {
 
     //------------------------------------------------------------------------------------------
 
-    vec3 BoundingBox::GetCenter() const {
+    vec3
+    BoundingBox::GetCenter() const {
         return (min + max) * 0.5f;
     }
 
     //------------------------------------------------------------------------------------------
 
-    vec3 BoundingBox::GetSize() const {
+    vec3
+    BoundingBox::GetSize() const {
         return max - min;
     }
 
     //------------------------------------------------------------------------------------------
 
-    void BoundingBox::GrowToInclude(const vec3 &point) {
+    vec3
+    BoundingBox::GetNormal(const vec3 &point) const {
+        const bvec3 hitMin = lessThan(abs(point - min), vec3(0));
+        const bvec3 hitMax = lessThan(abs(point - max), vec3(0));
+        return vec3(hitMax) - vec3(hitMin);
+    }
+
+    //------------------------------------------------------------------------------------------
+
+    void
+    BoundingBox::GrowToInclude(const vec3 &point) {
         min = {
             std::min(min.x, point.x),
             std::min(min.y, point.y),

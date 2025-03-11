@@ -13,22 +13,25 @@ layout (rgba32f, binding = 0) uniform image2D screen;
 #define NODE_REQUESTED  2
 #define NODE_LOADED     3
 
-struct MapNode {
-    // Index into the bricks[] array.
-    uint brickPointer;
-
-    // LOD color is stored int the first 24 bits and the states are stored in the last 8.
-    // States are: 0 = empty, 1 = unloaded, 2 = requested, 3 = loaded.
-    uint lodState;
-};
+//struct MapNode {
+//    // Index into the bricks[] array.
+//    uint brickPointer;
+//
+//    // LOD color is stored int the first 24 bits and the states are stored in the last 8.
+//    // States are: 0 = empty, 1 = unloaded, 2 = requested, 3 = loaded.
+//    uint lodState;
+//};
 
 struct Brick
 {
     // A bitmask where a value of 1 means the coordinate contains a voxel.
     uint voxels[BRICK_SIZE / 32];
 
-
+    // Index into colors[]
     uint colorPointer;
+
+    // Index into CoarseGrid[]
+    uint parent;
 };
 
 bool VoxelAt(Brick brick, const uint bit) {
@@ -40,6 +43,8 @@ struct BrickTexture
 {
     // Every voxel's color encoded into a uint32.
     uint colors[BRICK_SIZE];
+
+    uint referenceCount;
 };
 
 uniform vec2 u_Resolution;
@@ -142,7 +147,7 @@ TraverseCoarse(out vec3 normal, out uint steps) {
     //vec3 lastTMax = vec3(0);
 
     ivec3 outOfBounds = GetOutOfBounds(ray.direction, gridSize);
-    bvec3 stepMask = bvec3(0); //lessThanEqual(tMax.xyz, min(tMax.yzx, tMax.zxy));
+    bvec3 stepMask = bvec3(false);// = lessThanEqual(tMax.xyz, min(tMax.yzx, tMax.zxy));
 
     while (InBounds(currentPos, outOfBounds)) {
         uint currentBrick = CoarseGrid[GetIndex(currentPos, gridSize)];
@@ -150,16 +155,15 @@ TraverseCoarse(out vec3 normal, out uint steps) {
             //vec3 minBounds = vec3(currentPos) * u_VoxelSize * 8 - u_GridMinBounds;
             //vec3 maxBounds = vec3(currentPos + 1) * u_VoxelSize * 8 - u_GridMinBounds;
 
-            //normal = ivec3(stepMask) - gridStep;
-            vec3 lastTMax = vec3(0);
+            vec3 lastTMax = vec3(0);//tMax - ivec3(stepMask) * tDelta;
             if (stepMask.x || stepMask.y || stepMask.z) {
                 normal = vec3(stepMask) * -gridStep;
                 lastTMax = tMax - ivec3(stepMask) * tDelta;
             }
 
-            const float hitT = min(lastTMax.x, min(lastTMax.y, lastTMax.z)) + CORRECTION;
+            const float hitT = min(lastTMax.x, min(lastTMax.y, lastTMax.z)) - CORRECTION;
             vec3 hitPosition = (rayStart + ray.direction * hitT - currentPos) * 8 * u_VoxelSize;//* 8 * u_VoxelSize - currentPos;
-            //hitPosition = clamp(hitPosition, vec3(CORRECTION), vec3(8) - CORRECTION);
+            hitPosition = clamp(hitPosition, vec3(CORRECTION), vec3(8.0 * u_VoxelSize) - CORRECTION);
             const vec3 brickStart = vec3(floor(hitPosition * 8));
             //return vec4(brickStart / 8, 1);
 
@@ -191,7 +195,7 @@ void main()
     vec4 frag;
     const vec3 sun = vec3(0.3, 1.0, 0.3);
     if (u_ShowSteps) {
-        frag = DecodeSteps(steps, (u_GridXSize + u_GridYSize + u_GridZSize) * 8);
+        frag = DecodeSteps(steps, (u_GridXSize + u_GridYSize + u_GridZSize) * 16);
     } else if (u_ShowNormals) {
         frag = vec4(normal * 0.5 + 0.5, 1);
     } else {

@@ -1,7 +1,7 @@
 #include "Renderer.hpp"
 
 #include "Camera.hpp"
-#include <glad/glad.h>
+#include "GL/glew.h"
 
 #include "Vertex/VertexArray.hpp"
 #include "Vertex/IndexBuffer.hpp"

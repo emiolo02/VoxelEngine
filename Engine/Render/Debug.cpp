@@ -1,5 +1,5 @@
 #include "Debug.hpp"
-#include <glad/glad.h>
+#include "GL/glew.h"
 #include "Shader/Shader.hpp"
 #include <queue>
 

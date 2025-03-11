@@ -20,18 +20,13 @@ add_library(libs INTERFACE)
 
 ### glew ###
 
-#ensure_installed(glew https://github.com/Perlmint/glew-cmake/archive/refs/tags/glew-cmake-2.2.0.zip)
-#
-#set(glew-cmake_BUILD_SHARED OFF)
-#set(ONLY_LIBS ON)
-#
-#add_subdirectory(glew)
-#target_link_libraries(libs INTERFACE libglew_static)
+ensure_installed(glew https://github.com/Perlmint/glew-cmake/archive/refs/tags/glew-cmake-2.2.0.zip)
 
-add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/src/glad.c)
-target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include/)
+set(glew-cmake_BUILD_SHARED OFF)
+set(ONLY_LIBS ON)
 
-target_link_libraries(libs INTERFACE glad)
+add_subdirectory(glew)
+target_link_libraries(libs INTERFACE libglew_static)
 
 ### glfw ###
 

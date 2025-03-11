@@ -7,7 +7,7 @@ struct Image {
     int32 width = 0, height = 0;
     int32 numChannels = 0;
 
-    uint32 id = 0;
+    int32 id = -1;
 };
 
 class ImageManager {
@@ -18,13 +18,13 @@ public:
 
     void Save(const Image &image, const char *path) const;
 
-    void Save(uint32 imageId, const char *path) const;
+    void Save(int32 imageId, const char *path) const;
 
-    const Image &GetImage(uint32 imageId);
+    const Image &GetImage(int32 imageId);
 
 private:
     std::unordered_map<std::string, Image> m_Images;
-    std::unordered_map<uint32, Image *> m_ImagesById;
+    std::unordered_map<int32, Image *> m_ImagesById;
 
-    uint32 m_NextId = 0;
+    int32 m_NextId = 0;
 };

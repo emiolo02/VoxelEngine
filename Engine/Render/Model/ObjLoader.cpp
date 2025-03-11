@@ -58,13 +58,16 @@ ObjLoader::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
     aiMaterial *mat = scene->mMaterials[mesh->mMaterialIndex];
     aiString path;
     mat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-    std::string fullPath = m_Directory + path.C_Str();
+    const std::string fullPath = m_Directory + path.C_Str();
+    int32 imageId = -1;
+    if (path.length > 0) {
+        imageId = ImageManager::Get().Load(fullPath).id;
+    }
 
     return {
         vertices,
         indices,
-        ImageManager::Get().Load(fullPath.c_str())
-
+        imageId
     };
 }
 

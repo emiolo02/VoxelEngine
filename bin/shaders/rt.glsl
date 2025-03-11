@@ -1,4 +1,4 @@
-#define CORRECTION 0.001
+#define CORRECTION 0.00001
 
 struct Ray {
     vec3 origin;
@@ -23,7 +23,8 @@ DecodeColor(uint c) {
 
 vec4
 DecodeSteps(uint s, uint maxSteps) {
-    return vec4(vec3(s) / maxSteps, 1.0);
+    float color = float(s) / float(maxSteps);
+    return vec4(vec3(color), 1.0);
 }
 
 bool

@@ -1,6 +1,6 @@
 #include "App.hpp"
 
-#include <glad/glad.h>
+#include "GL/glew.h"
 #include "GLFW/glfw3.h"
 
 #include "Input/InputManager.hpp"
@@ -21,6 +21,7 @@
 #include "Render/Model/ObjLoader.hpp"
 #include "Render/Model/Voxelizer.hpp"
 #include "Render/Debug.hpp"
+#include "Render/GraphicsNode.hpp"
 
 #include "Render/Texture/Image.hpp"
 
@@ -78,25 +79,24 @@ App::Run() {
     Debug::Init();
 
 
-#define MODEL_PATH "assets/monkey.obj"
+#define MODEL_PATH "assets/dragon_vrip.ply"
 
     auto &model = ObjLoader::Get().Load(MODEL_PATH);
     //ImageManager::Get().Save(4, "sponzatest.png");
-    OctreeMesh octree(model, 6);
 
     std::vector<GraphicsNode> graphicsNodes;
     graphicsNodes.reserve(model.meshes.size());
     //for (const Mesh &mesh: model.meshes) {
-    //  GraphicsNode &node = graphicsNodes.emplace_back(mesh);
-    //  node.GetTransform().scale = vec3(0.001f);
+    //    GraphicsNode &node = graphicsNodes.emplace_back(mesh);
+    //    node.GetTransform().scale = vec3(0.001f);
     //}
     //ModelBVH bvh(model, 10);
 
-    ObjLoader::Get().Remove(MODEL_PATH);
 
-    BrickMap brickMap = octree.CreateBrickMap(0.1f);
+    BrickMap brickMap = Voxelize(model, 8, 0.1f); //, math::Color(0xFFFFFFFF)); //octree.CreateBrickMap(0.1f);
     brickMap.PrintByteSize();
     //brickMap.PrintByteSize();
+    ObjLoader::Get().Remove(MODEL_PATH);
 
     //octree.Clear();
 
@@ -123,6 +123,7 @@ App::Run() {
 
     m_Inspector.AddBool("Show steps");
     m_Inspector.AddBool("Show normals");
+    m_Inspector.AddInt("Radius", 1);
 
     m_Inspector.AddButton("Recompile shader", [&renderer] {
         renderer.GetRaytraceShader() = Shader("shaders/rtBrickmap.comp");
@@ -157,48 +158,145 @@ App::Run() {
 
         renderer.SetDimensions(windowWidth, windowHeight);
         renderer.Render();
-        static math::Ray ray;
         if (inputManager.mouse.GetPressed(Input::MouseButton::left)) {
+            const bool actionDelete = inputManager.keyboard.GetHeld(Input::Key::Space);
             //std::cout << "Sent ray\n";
-            ray = {firstPersonCamera.GetPosition(), firstPersonCamera.GetForward()};
+            const math::Ray ray = {firstPersonCamera.GetPosition(), firstPersonCamera.GetForward()};
             //std::cout << to_string(ray.origin) << '\n' << to_string(ray.direction) << '\n';
             const auto hitVoxel = brickMap.RayCast(ray);
             if (hitVoxel) {
                 //std::cout << "Hit pog\n";
-                const ivec3 globalPosition = hitVoxel.value();
-                const ivec3 localPosition = globalPosition % 8;
-                auto hierarchy = brickMap.GetHierarchy(globalPosition);
+                auto hitResult = hitVoxel.value();
+                const ivec3 insertPosition = hitResult.position + hitResult.normal;
 
-                BrickMap::BrickTexture &texture = std::get<2>(hierarchy);
-                texture.voxels[Flatten(localPosition, ivec3(8))] = math::Color(1.0f, 0.0f, 0.0f, 1.0f);
+                if (actionDelete) {
+                    std::vector<uint32> removedBricks;
+                    std::vector<uint32> modifiedBricks;
+                    const int radius = m_Inspector.GetInt("Radius");
+                    const int radiusSq = radius * radius;
+                    for (int z = hitResult.position.z - radius; z < hitResult.position.z + radius; ++z) {
+                        for (int y = hitResult.position.y - radius; y < hitResult.position.y + radius; ++y) {
+                            for (int x = hitResult.position.x - radius; x < hitResult.position.x + radius; ++x) {
+                                const ivec3 distanceVector = hitResult.position - ivec3(x, y, z);
+                                const int distanceSq =
+                                        distanceVector.x * distanceVector.x +
+                                        distanceVector.y * distanceVector.y +
+                                        distanceVector.z * distanceVector.z;
 
-                textureBuffer.SetData(std::get<1>(hierarchy).colorPointer, texture);
+                                if (distanceSq < radiusSq) {
+                                    if (auto result = brickMap.Delete({x, y, z})) {
+                                        if (result->isEmpty) {
+                                            removedBricks.push_back(result->cellIndex);
+                                        } else {
+                                            modifiedBricks.push_back(result->cellIndex);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for (auto gridCell: removedBricks) {
+                        auto &grid = brickMap.GetGrid();
+                        auto &bricks = brickMap.GetBricks();
+                        auto &brickTextures = brickMap.GetBrickTextures();
 
-                m_Inspector.AddVec3("hit", vec3(
-                                        std::get<0>(hierarchy),
-                                        std::get<1>(hierarchy).colorPointer,
-                                        Flatten(localPosition, ivec3(8))
-                                    ));
+                        const uint32 removedBrickIndex = grid[gridCell];
+                        if (removedBrickIndex == EMPTY_BRICK) continue;
+
+                        // Set GPU data.
+                        gridBuffer.SetData(bricks.back().parent, removedBrickIndex);
+                        gridBuffer.SetData(gridCell, EMPTY_BRICK);
+
+                        brickBuffer.SetData(removedBrickIndex, bricks.back());
+                        brickBuffer.PopBack();
+
+                        textureBuffer.SetData(removedBrickIndex, brickTextures.back());
+                        textureBuffer.PopBack();
+
+                        // Set CPU data.
+                        grid[bricks.back().parent] = removedBrickIndex;
+                        grid[gridCell] = EMPTY_BRICK;
+
+                        bricks[removedBrickIndex] = bricks.back();
+                        bricks.pop_back();
+
+                        brickTextures[removedBrickIndex] = brickTextures.back();
+                        brickTextures.pop_back();
+                    }
+                    for (auto gridCell: modifiedBricks) {
+                        const uint32 brickPointer = brickMap.GetGrid()[gridCell];
+                        if (brickPointer == EMPTY_BRICK) continue;
+
+                        const BrickMap::Brick &brick = brickMap.GetBricks()[brickPointer];
+                        const BrickMap::BrickTexture &brickTexture = brickMap.GetBrickTextures()[brick.
+                            colorPointer];
+
+                        brickBuffer.SetData(brickPointer, brick);
+                        textureBuffer.SetData(brick.colorPointer, brickTexture);
+                    }
+                } else {
+                    const math::Color color = brickMap.GetVoxel(hitResult.position).value();
+                    std::vector<uint32> newBricks;
+                    std::vector<uint32> modifiedBricks;
+                    const int radius = m_Inspector.GetInt("Radius");
+                    const int radiusSq = radius * radius;
+                    for (int z = insertPosition.z - radius; z < insertPosition.z + radius; ++z) {
+                        for (int y = insertPosition.y - radius; y < insertPosition.y + radius; ++y) {
+                            for (int x = insertPosition.x - radius; x < insertPosition.x + radius; ++x) {
+                                const ivec3 distanceVector = insertPosition - ivec3(x, y, z);
+                                const int distanceSq =
+                                        distanceVector.x * distanceVector.x +
+                                        distanceVector.y * distanceVector.y +
+                                        distanceVector.z * distanceVector.z;
+
+                                if (distanceSq < radiusSq) {
+                                    if (auto result = brickMap.Insert({x, y, z}, color, false)) {
+                                        if (result->isNew) {
+                                            newBricks.push_back(result->cellIndex);
+                                        } else {
+                                            modifiedBricks.push_back(result->cellIndex);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for (const auto gridCell: newBricks) {
+                        const uint32 brickPointer = brickMap.GetGrid()[gridCell];
+                        const BrickMap::Brick &brick = brickMap.GetBricks()[brickPointer];
+                        const BrickMap::BrickTexture &brickTexture = brickMap.GetBrickTextures()[brick.colorPointer];
+
+                        gridBuffer.SetData(gridCell, brickPointer);
+                        brickBuffer.PushBack(brick);
+                        textureBuffer.PushBack(brickTexture);
+                    }
+
+                    for (const auto gridCell: modifiedBricks) {
+                        const uint32 brickPointer = brickMap.GetGrid()[gridCell];
+                        const BrickMap::Brick &brick = brickMap.GetBricks()[brickPointer];
+                        const BrickMap::BrickTexture &brickTexture = brickMap.GetBrickTextures()[brick.colorPointer];
+
+                        brickBuffer.SetData(brickPointer, brick);
+                        textureBuffer.SetData(brick.colorPointer, brickTexture);
+                    }
+                }
             }
         }
 
-        for (const auto &hitGridCell: brickMap.hitGridCells) {
-            Debug::DrawBox(hitGridCell.GetCenter(), vec3(), hitGridCell.GetSize(), {1, 0, 0, 1}, 2);
-        }
+        // Cursor
+        //Debug::DrawBox(firstPersonCamera.GetPosition() + firstPersonCamera.GetForward(), {}, vec3(0.001f), vec4(1.0f),
+        //               2);
 
-        Debug::DrawLine(ray.origin, ray.direction * 10.0f, {1, 0, 0, 1}, 2);
-        const math::BoundingBox &brickBounds = brickMap.GetBoundingBox();
-        Debug::DrawBox(brickBounds.GetCenter(), vec3(), brickBounds.GetSize(), {0, 1, 0, 1}, 2);
         //-----------------
-        //glEnable(GL_DEPTH_TEST);
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_DEPTH_BUFFER_BIT);
 
         for (const auto &node: graphicsNodes) {
             node.Draw();
         }
 
 
-        //Debug::RenderDebug(firstPersonCamera.GetProjView());
+        Debug::RenderDebug(firstPersonCamera.GetProjView());
         Debug::ClearQueue();
 
         m_Window.SwapBuffers();

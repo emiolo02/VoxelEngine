@@ -1,5 +1,5 @@
 #include "StorageBuffer.hpp"
-#include <glad/glad.h>
+#include "GL/glew.h"
 
 void
 details::CreateBuffer(uint32 &id) {
@@ -10,7 +10,7 @@ details::CreateBuffer(uint32 &id) {
 
 void
 details::Upload(const uint32 id, const size_t size, const void *data) {
-  glNamedBufferStorage(id, size, data, GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferStorage(id, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT);
 }
 
 //------------------------------------------------------------------------------------------
@@ -30,14 +30,7 @@ details::SetData(const uint32 id, const size_t offset, const size_t size, const 
 //------------------------------------------------------------------------------------------
 
 void
-details::SetElement(const uint32 id, const size_t index, const size_t size, const void *element) {
-  glNamedBufferSubData(id, index, size, element);
-}
-
-//------------------------------------------------------------------------------------------
-
-void
-details::Clear(const uint32 id) {
+details::Destroy(const uint32 id) {
   glDeleteBuffers(1, &id);
 }
 

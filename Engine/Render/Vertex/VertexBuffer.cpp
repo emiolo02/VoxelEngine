@@ -1,6 +1,6 @@
 #include "VertexBuffer.hpp"
 
-#include <glad/glad.h>
+#include "GL/glew.h"
 #include <cstring>
 
 VertexBuffer::VertexBuffer(const void *data, const size_t byteSize) {

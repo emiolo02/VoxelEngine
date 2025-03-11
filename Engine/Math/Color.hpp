@@ -19,5 +19,7 @@ namespace math {
         Color(float r, float g, float b, float a);
 
         Color(uint8 r, uint8 g, uint8 b, uint8 a);
+
+        Color &operator=(const Color &other);
     };
 }

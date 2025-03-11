@@ -6,7 +6,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "imgui.h"
-#include <glad/glad.h>
+#include "GL/glew.h"
 #include <GLFW/glfw3.h>
 
 namespace Display {
@@ -57,7 +57,7 @@ namespace Display {
             default: // Portability, Deprecated, Other
                 break;
         }
-        assert(severity != GL_DEBUG_SEVERITY_MEDIUM && severity != GL_DEBUG_SEVERITY_HIGH);
+        assert(/*severity != GL_DEBUG_SEVERITY_MEDIUM && */severity != GL_DEBUG_SEVERITY_HIGH);
     }
 
     static void GLFWErrorCallback(int error_code, const char *description) {
@@ -233,23 +233,21 @@ namespace Display {
         glfwMakeContextCurrent(m_Window);
 
         if (nullptr != m_Window && s_WindowCount == 0) {
-            if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
-                std::cerr << "Failed to initialize GLAD.\n";
-                exit(EXIT_FAILURE);
+            GLenum res = glewInit();
+
+            assert(res == GLEW_OK);
+            if (!GLEW_VERSION_4_0) {
+                printf("[ERROR]: OpenGL 4.0+ is not supported on this hardware!\n");
+                glfwDestroyWindow(m_Window);
+                m_Window = nullptr;
+                glfwTerminate();
+                return false;
             }
-            //GLenum res = glewInit();
+
             std::cout << "Detected hardware:\n" <<
                     '\t' << glGetString(GL_VENDOR) << '\n' <<
                     '\t' << glGetString(GL_RENDERER) << '\n';
-            std::cout << "OpenGL version: " << GLVersion.major << '.' << GLVersion.minor << '\n';
-            //assert(res == GLEW_OK);
-            //if (!(GLEW_VERSION_4_0)) {
-            //    printf("[ERROR]: OpenGL 4.0+ is not supported on this hardware!\n");
-            //    glfwDestroyWindow(m_Window);
-            //    m_Window = nullptr;
-            //    glfwTerminate();
-            //    return false;
-            //}
+            std::cout << "OpenGL version: " << glGetString(GL_VERSION) << '\n';
 
             // setup debug callback
             glEnable(GL_DEBUG_OUTPUT);

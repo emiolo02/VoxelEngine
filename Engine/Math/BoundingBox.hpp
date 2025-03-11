@@ -18,6 +18,8 @@ namespace math {
 
         vec3 GetSize() const;
 
+        vec3 GetNormal(const vec3 &point) const;
+
         void GrowToInclude(const vec3 &point);
 
         bool Intersect(const Ray &ray) const;

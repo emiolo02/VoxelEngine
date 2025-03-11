@@ -34,5 +34,11 @@ namespace math {
           r(r) {
     }
 
+    Color &
+    Color::operator=(const Color &other) {
+        data = other.data;
+        return *this;
+    }
+
     //------------------------------------------------------------------------------------------
 }

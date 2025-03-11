@@ -16,7 +16,7 @@ ImageManager::Save(const Image &image, const char *path) const {
 }
 
 void
-ImageManager::Save(const uint32 imageId, const char *path) const {
+ImageManager::Save(const int32 imageId, const char *path) const {
     const Image &image = *m_ImagesById.at(imageId);
     stbi_flip_vertically_on_write(true);
     std::vector<math::Color> toWrite(image.pixels.size());
@@ -37,7 +37,7 @@ ImageManager::Save(const uint32 imageId, const char *path) const {
 
 
 const Image &
-ImageManager::GetImage(const uint32 imageId) {
+ImageManager::GetImage(const int32 imageId) {
     return *m_ImagesById[imageId];
 }
 

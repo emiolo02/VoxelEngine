@@ -12,11 +12,17 @@
 
 struct Model;
 
+struct VoxelHitResult {
+  ivec3 position{};
+  ivec3 normal{};
+};
+
 class BrickMap {
 public:
   struct Brick {
     uint32 bitmask[BRICK_SIZE / 32] = {};
     uint32 colorPointer = 0;
+    uint32 parent = 0;
 
     void Set(const uint32 bit, const bool value) {
       assert(bit < BRICK_SIZE);
@@ -38,6 +44,17 @@ public:
 
   struct BrickTexture {
     math::Color voxels[BRICK_SIZE] = {};
+    uint32 referenceCount = 0;
+  };
+
+  struct InsertResult {
+    uint32 cellIndex = 0;
+    bool isNew = false;
+  };
+
+  struct DeleteResult {
+    uint32 cellIndex = 0;
+    bool isEmpty = false;
   };
 
   BrickMap() = default;
@@ -52,29 +69,39 @@ public:
 
   void Fill();
 
-  bool Insert(uint32 x, uint32 y, uint32 z, math::Color color);
+  std::optional<InsertResult> Insert(const ivec3 &position, math::Color color, bool replace = true);
+
+  std::optional<InsertResult> Insert(const ivec3 &position, uint32 textureIndex);
+
+  std::optional<DeleteResult> Delete(const ivec3 &position);
 
   const std::vector<uint32> &GetGrid() const { return m_Grid; }
+
+  std::vector<uint32> &GetGrid() { return m_Grid; }
+
   const std::vector<Brick> &GetBricks() const { return m_Bricks; }
+
+  std::vector<Brick> &GetBricks() { return m_Bricks; }
+
   const std::vector<BrickTexture> &GetBrickTextures() const { return m_Textures; }
+
+  std::vector<BrickTexture> &GetBrickTextures() { return m_Textures; }
+
   const math::BoundingBox &GetBoundingBox() const { return m_BoundingBox; }
   float GetVoxelSize() const { return m_VoxelSize; }
   const ivec3 &GetDimensions() const { return m_Dimensions; }
 
   void PrintByteSize() const;
 
-  // Returns position of hit voxel.
-  std::optional<ivec3> RayCast(const math::Ray &ray);
+  std::optional<VoxelHitResult> RayCast(const math::Ray &ray);
 
   std::tuple<uint32 &, Brick &, BrickTexture &> GetHierarchy(const ivec3 &position);
 
-  std::vector<math::BoundingBox> hitGridCells;
+  std::optional<math::Color> GetVoxel(const ivec3 &position) const;
 
 private:
-  std::optional<ivec3> TraverseCoarse(const math::Ray &ray);
-
-  std::optional<ivec3> TraverseFine(const ivec3 &brickPosition, const math::Ray &ray,
-                                    const math::BoundingBox &brickBounds);
+  std::optional<VoxelHitResult> TraverseFine(const ivec3 &brickPosition, const math::Ray &ray,
+                                             const math::BoundingBox &brickBounds);
 
   std::vector<uint32> m_Grid;
   std::vector<Brick> m_Bricks;
@@ -84,3 +111,5 @@ private:
   float m_VoxelSize = 1.0f;
   int m_VoxelCount = 0;
 };
+
+std::string PrefixedSize(float size);

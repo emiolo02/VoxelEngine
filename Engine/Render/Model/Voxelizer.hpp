@@ -70,9 +70,9 @@ struct Node {
 
 class OctreeMesh {
 public:
-    explicit OctreeMesh(const Mesh &mesh, uint32 depth);
+    OctreeMesh(const Mesh &mesh, uint32 depth);
 
-    explicit OctreeMesh(const Model &model, uint32 depth);
+    OctreeMesh(const Model &model, uint32 depth);
 
     void Subdivide(uint32 nodeIndex, uint32 depth);
 
@@ -82,13 +82,18 @@ public:
 
     std::vector<math::Color> Linearize();
 
+    // Samples textures in model to assign colors to the voxels.
     BrickMap CreateBrickMap(float voxelSize);
 
+    // All voxels will share the same color.
+    BrickMap CreateBrickMap(float voxelSize, math::Color color);
 
     uint32 GetSize() const;
 
 private:
-    void FillBrickMap(Node *node, uint32 level, const ivec3 &globalPosition, BrickMap &bm);
+    void FillBrickMap(const Node *node, uint32 level, const ivec3 &globalPosition, BrickMap &bm);
+
+    void FillBrickMap(const Node *node, uint32 level, const ivec3 &globalPosition, BrickMap &bm, uint32 textureIndex);
 
     void DrawNode(const Node *node, uint32 depth) const;
 
@@ -98,3 +103,5 @@ private:
 };
 
 BrickMap Voxelize(const Model &model, uint32 subdivisions, float voxelSize);
+
+BrickMap Voxelize(const Model &model, uint32 subdivisions, float voxelSize, math::Color color);

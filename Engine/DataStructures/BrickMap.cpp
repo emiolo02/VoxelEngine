@@ -32,7 +32,7 @@ BrickMap::BrickMap(const vec3 &position, const std::vector<math::Color> &voxels,
             for (uint32 x = 0; x < dimensions.x; ++x) {
                 const uint32 index = Flatten({x, y, z}, dimensions);
                 if (voxels[index].data != 0) {
-                    Insert(x, y, z, voxels[index]);
+                    Insert({x, y, z}, voxels[index]);
                 }
             }
         }
@@ -72,6 +72,9 @@ BrickMap::PrintByteSize() const {
     std::cout << "\tGrid:\t\t" << PrefixedSize(sizeGrid) << '\n';
     std::cout << "\tBricks:\t\t" << PrefixedSize(sizeBricks) << '\n';
     std::cout << "\tTextures:\t" << PrefixedSize(sizeTextures) << '\n';
+
+    std::cout << "Total grid cells: " << m_Grid.size() << '\n';
+    std::cout << "Filled grid cells: " << m_Bricks.size() << '\n';
 }
 
 struct DataDDA {
@@ -106,13 +109,10 @@ struct DataDDA {
     int stepAxis = -1;
 };
 
-std::optional<ivec3>
+std::optional<VoxelHitResult>
 BrickMap::RayCast(const math::Ray &ray) {
-    hitGridCells.clear();
-
     float tNear, tFar;
     if (!ray.Intersect(m_BoundingBox, tNear, tFar)) {
-        std::cout << "Miss box\n";
         return {};
     }
     tNear = std::max(tNear + 1e-3f, 0.0f);
@@ -121,7 +121,6 @@ BrickMap::RayCast(const math::Ray &ray) {
     DataDDA data(brickSize, {ray.origin + ray.direction * tNear - m_BoundingBox.min, ray.direction}, gridSize);
 
     while (data.InBounds()) {
-        //hitGridCells.emplace_back((vec3(data.position) + vec3(0.5f)) * brickSize + m_BoundingBox.min, brickSize);
         if (m_Grid[Flatten(data.position, gridSize)] != EMPTY_BRICK) {
             //std::cout << "Found brick\n";
             vec3 lastTMax = data.tMax - data.tDelta[data.stepAxis];
@@ -132,7 +131,6 @@ BrickMap::RayCast(const math::Ray &ray) {
 
             const math::BoundingBox brickBounds((vec3(data.position) + vec3(0.5f)) * brickSize + m_BoundingBox.min,
                                                 brickSize);
-            hitGridCells.emplace_back(brickBounds);
             //return {};
             const auto hit = TraverseFine(data.position, ray, brickBounds);
             if (hit) return hit;
@@ -151,12 +149,21 @@ BrickMap::GetHierarchy(const ivec3 &position) {
     return {cell, brick, texture};
 }
 
-std::optional<ivec3>
-BrickMap::TraverseCoarse(const math::Ray &ray) {
-    return {};
+
+std::optional<math::Color>
+BrickMap::GetVoxel(const ivec3 &position) const {
+    const uint32 brickIndex = m_Grid[Flatten(position / 8, m_Dimensions)];
+    if (brickIndex == EMPTY_BRICK)
+        return {};
+
+    const uint32 voxelIndex = Flatten(position % 8, ivec3(8));
+    if (!m_Bricks[brickIndex].VoxelAt(voxelIndex))
+        return {};
+
+    return m_Textures[brickIndex].voxels[voxelIndex];
 }
 
-std::optional<ivec3>
+std::optional<VoxelHitResult>
 BrickMap::TraverseFine(const ivec3 &brickPosition, const math::Ray &ray, const math::BoundingBox &brickBounds) {
     //DataDDA data(m_VoxelSize, ray, ivec3(8));
     float tNear, tFar;
@@ -167,52 +174,120 @@ BrickMap::TraverseFine(const ivec3 &brickPosition, const math::Ray &ray, const m
     tNear = std::max(tNear + 1e-3f, 0.0f);
     DataDDA data(m_VoxelSize, {ray.origin + ray.direction * tNear - brickBounds.min, ray.direction}, ivec3(8));
 
+    vec3 normal = brickBounds.GetNormal(data.rayStart);
+
     const Brick &brick = m_Bricks[m_Grid[Flatten(brickPosition, m_Dimensions)]];
 
     while (data.InBounds()) {
         if (brick.VoxelAt(Flatten(data.position, ivec3(8)))) {
-            hitGridCells.emplace_back((vec3(data.position) + vec3(0.5f)) * m_VoxelSize + brickBounds.min, m_VoxelSize);
-            return brickPosition * 8 + data.position;
+            normal = vec3(0);
+            normal[data.stepAxis] = -data.gridStep[data.stepAxis];
+
+            return {{brickPosition * 8 + data.position, normal}};
         }
         data.Step();
     }
     return {};
 }
 
-bool
-BrickMap::Insert(uint32 x, uint32 y, uint32 z, math::Color color) {
-    const uint32 coarseX = x / 8;
-    const uint32 coarseY = y / 8;
-    const uint32 coarseZ = z / 8;
-    if (coarseX > m_Dimensions.x || coarseY > m_Dimensions.y || coarseZ > m_Dimensions.z) {
-        return false;
-    }
+std::optional<BrickMap::InsertResult>
+BrickMap::Insert(const ivec3 &position, const math::Color color, const bool replace) {
+    if (position.x >= m_Dimensions.x * 8 || position.y >= m_Dimensions.y * 8 || position.z >= m_Dimensions.z * 8 ||
+        position.x < 0 || position.y < 0 || position.z < 0)
+        return {};
 
-    const size_t coarseIndex = coarseX + m_Dimensions.x * (coarseY + m_Dimensions.y * coarseZ);
-    if (coarseIndex > m_Grid.size()) {
-        //std::cout << "Coarse: x=" << coarseX << " y=" << coarseY << " z=" << coarseZ << '\n';
-        //std::cout << "Global: x=" << x << " y=" << y << " z=" << z << '\n';
-        return false;
-    }
+    const size_t coarseIndex = Flatten(position / 8, m_Dimensions);
+
+    InsertResult insertResult(coarseIndex, false);
 
     if (m_Grid[coarseIndex] == EMPTY_BRICK) {
+        m_Grid[coarseIndex] = m_Bricks.size();
         Brick &brick = m_Bricks.emplace_back();
-        m_Grid[coarseIndex] = m_Bricks.size() - 1;
+        brick.parent = coarseIndex;
 
-        m_Textures.emplace_back();
-        brick.colorPointer = m_Textures.size() - 1;
+        brick.colorPointer = m_Textures.size();
+        BrickTexture &texture = m_Textures.emplace_back();
+        texture.referenceCount++;
+
+        insertResult.isNew = true;
     }
 
-    const size_t fineIndex = x % 8 + 8 * (y % 8 + 8 * (z % 8));
+    const size_t fineIndex = Flatten(position % 8, ivec3(8));
 
     Brick &brick = m_Bricks[m_Grid[coarseIndex]];
     BrickTexture &texture = m_Textures[brick.colorPointer];
+
+    if (replace || !brick.VoxelAt(fineIndex)) {
+        brick.Set(fineIndex, true);
+        texture.voxels[fineIndex] = color;
+        return insertResult;
+    }
+    return {};
+}
+
+std::optional<BrickMap::InsertResult>
+BrickMap::Insert(const ivec3 &position, const uint32 textureIndex) {
+    if (position.x >= m_Dimensions.x * 8 || position.y >= m_Dimensions.y * 8 || position.z >= m_Dimensions.z * 8 ||
+        position.x < 0 || position.y < 0 || position.z < 0)
+        return {};
+
+    const size_t coarseIndex = Flatten(position / 8, m_Dimensions);
+
+    InsertResult insertResult(coarseIndex, false);
+
+    if (m_Grid[coarseIndex] == EMPTY_BRICK) {
+        m_Grid[coarseIndex] = m_Bricks.size();
+        Brick &brick = m_Bricks.emplace_back();
+        brick.parent = coarseIndex;
+
+        if (textureIndex >= m_Textures.size()) {
+            std::cerr << "Texture index " << textureIndex << " is invalid.\n";
+            return {};
+        }
+
+        brick.colorPointer = textureIndex;
+        m_Textures[textureIndex].referenceCount++;
+
+        insertResult.isNew = true;
+    }
+
+    const size_t fineIndex = Flatten(position % 8, ivec3(8));
+
+    Brick &brick = m_Bricks[m_Grid[coarseIndex]];
+
     brick.Set(fineIndex, true);
-    texture.voxels[fineIndex] = color;
+    return insertResult;
+}
 
-    m_VoxelCount++;
+std::optional<BrickMap::DeleteResult>
+BrickMap::Delete(const ivec3 &position) {
+    if (position.x >= m_Dimensions.x * 8 || position.y >= m_Dimensions.y * 8 || position.z >= m_Dimensions.z * 8 ||
+        position.x < 0 || position.y < 0 || position.z < 0)
+        return {};
 
-    return true;
+    const size_t coarseIndex = Flatten(position / 8, m_Dimensions);
+
+
+    if (m_Grid[coarseIndex] == EMPTY_BRICK) {
+        return {};
+    }
+
+    const size_t fineIndex = Flatten(position % 8, ivec3(8));
+
+    Brick &brick = m_Bricks[m_Grid[coarseIndex]];
+    //BrickTexture &texture = m_Textures[brick.colorPointer];
+
+    brick.Set(fineIndex, false);
+
+    bool isEmpty = true;
+    for (int i = 0; i < BRICK_SIZE / 32; ++i) {
+        if (brick.bitmask[i] != 0) {
+            isEmpty = false;
+            break;
+        }
+    }
+
+    return DeleteResult(coarseIndex, isEmpty);
 }
 
 void
@@ -234,7 +309,7 @@ BrickMap::GenerateSphere() {
                     uint8 r = ((float) x * invDimensions.x * 255.0f);
                     uint8 g = ((float) y * invDimensions.y * 255.0f);
                     uint8 b = ((float) z * invDimensions.z * 255.0f);
-                    Insert(x, y, z, {r, g, b, 255});
+                    Insert({x, y, z}, {r, g, b, 255});
                 }
             }
         }
@@ -263,7 +338,7 @@ BrickMap::Fill() {
                 );
                 const uint8 u = static_cast<uint8>(f * 255.0f);
                 if (f > 0.3f)
-                    Insert(x, y, z, {u, u, u, 255});
+                    Insert({x, y, z}, {u, u, u, 255});
             }
         }
     }
