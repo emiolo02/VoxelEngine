@@ -21,7 +21,6 @@
 #include "Render/Model/ObjLoader.hpp"
 #include "Render/Model/Voxelizer.hpp"
 #include "Render/Debug.hpp"
-#include "Render/GraphicsNode.hpp"
 
 #include "Render/Texture/Image.hpp"
 
@@ -79,21 +78,19 @@ App::Run() {
     Debug::Init();
 
 
-#define MODEL_PATH "assets/dragon_vrip.ply"
+#define MODEL_PATH "assets/Sponza/Sponza.gltf"
 
     auto &model = ObjLoader::Get().Load(MODEL_PATH);
     //ImageManager::Get().Save(4, "sponzatest.png");
 
     std::vector<GraphicsNode> graphicsNodes;
-    graphicsNodes.reserve(model.meshes.size());
+    //graphicsNodes.reserve(model.meshes.size());
     //for (const Mesh &mesh: model.meshes) {
     //    GraphicsNode &node = graphicsNodes.emplace_back(mesh);
     //    node.GetTransform().scale = vec3(0.001f);
     //}
-    //ModelBVH bvh(model, 10);
 
-
-    BrickMap brickMap = Voxelize(model, 8, 0.1f); //, math::Color(0xFFFFFFFF)); //octree.CreateBrickMap(0.1f);
+    BrickMap brickMap = Voxelize(model, 10, 0.1f); //, math::Color(0xFFFFFFFF)); //octree.CreateBrickMap(0.1f);
     brickMap.PrintByteSize();
     //brickMap.PrintByteSize();
     ObjLoader::Get().Remove(MODEL_PATH);

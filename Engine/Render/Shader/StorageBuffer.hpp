@@ -9,9 +9,9 @@ namespace details {
 
     void SetData(uint32 id, size_t offset, size_t size, const void *data);
 
-    void Destroy(uint32 id);
+    void Destroy(uint32 &id);
 
-    void Bind(uint32, uint32);
+    void Bind(uint32 id, uint32 binding);
 }
 
 //------------------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ StorageBuffer<T>::SetData(const size_t index, const T &element) {
 
 template<typename T>
 void
-StorageBuffer<T>::PushBack(const T &element) {
+StorageBuffer<T>::PushBack(const T& element) {
     if (m_Size == m_Capacity) {
         // Growth factor of 1.25
         Reserve((5 * m_Size) >> 2);
@@ -145,7 +145,7 @@ StorageBuffer<T>::Reserve(const size_t newCapacity) {
 
     m_Capacity = newCapacity;
 
-    std::vector<T> data(m_Size);
+    std::vector<T> data(m_Capacity);
 
     details::GetData(m_Id, 0, m_Size * sizeof(T), data.data());
 

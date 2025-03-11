@@ -10,7 +10,8 @@ details::CreateBuffer(uint32 &id) {
 
 void
 details::Upload(const uint32 id, const size_t size, const void *data) {
-  glNamedBufferStorage(id, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT);
+	//glNamedBufferData()
+	glNamedBufferStorage(id, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT);
 }
 
 //------------------------------------------------------------------------------------------
@@ -30,8 +31,9 @@ details::SetData(const uint32 id, const size_t offset, const size_t size, const 
 //------------------------------------------------------------------------------------------
 
 void
-details::Destroy(const uint32 id) {
+details::Destroy(uint32 &id) {
   glDeleteBuffers(1, &id);
+  id = 0;
 }
 
 //------------------------------------------------------------------------------------------
