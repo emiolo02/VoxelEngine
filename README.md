@@ -1,5 +1,16 @@
 # Voxel engine
 
+## Table of contents
+
+- [Demonstration](#demonstration)
+- [Requirements](#requirements)
+- [Build instructions](#build-instructions)
+    1. [Linux](#linux)
+    2. [Windows](#windows)
+- [Usage](#usage)
+
+## Demonstration
+
 ![Voxelized stanford dragon](docs/color.png)
 ![Voxelized stanford dragon ray marching steps](docs/steps.png)
 
