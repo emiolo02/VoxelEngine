@@ -209,6 +209,7 @@ OctreeMesh::Subdivide(const uint32 nodeIndex, const uint32 depth) {
                 break;
             }
         }
+        if (node.color.data == 0) node.color = math::Color(0xFFFFFFFF);
 
         node.triangles.clear();
         node.triangles.shrink_to_fit();

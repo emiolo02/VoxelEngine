@@ -1,5 +1,8 @@
 # Voxel engine
 
+![Voxelized stanford dragon](docs/color.png)
+![Voxelized stanford dragon ray marching steps](docs/steps.png)
+
 ## Requirements
 
 - CMake 3.5+
