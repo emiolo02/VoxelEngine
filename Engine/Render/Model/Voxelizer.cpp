@@ -190,8 +190,6 @@ void
 OctreeMesh::Subdivide(const uint32 nodeIndex, const uint32 depth) {
     if (depth == m_MaxDepth) {
         Node &node = m_Nodes[nodeIndex];
-        //node.color = math::Color(0xFFFFFFFF);
-        //return;
         for (const auto &triangle: node.triangles) {
             float b0, b1, b2;
             if (triangle.PointInTriangle(node.boundingBox.GetCenter(), &b0, &b1, &b2)) {
@@ -227,7 +225,7 @@ OctreeMesh::Subdivide(const uint32 nodeIndex, const uint32 depth) {
         vec3(-1, 1, 1),
         vec3(1, 1, 1)
     };
-    
+
     m_Nodes.insert(m_Nodes.end(), 8, {});
 
     //m_Nodes[nodeIndex]

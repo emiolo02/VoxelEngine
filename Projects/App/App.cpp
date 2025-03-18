@@ -77,10 +77,7 @@ App::Run() {
 
     Debug::Init();
 
-
-#define MODEL_PATH "assets/sponza/Sponza.gltf"
-
-    auto &model = ObjLoader::Get().Load(MODEL_PATH);
+    auto &model = ObjLoader::Get().Load(m_ModelPath);
     //ImageManager::Get().Save(4, "sponzatest.png");
 
     std::vector<GraphicsNode> graphicsNodes;
@@ -90,10 +87,11 @@ App::Run() {
     //    node.GetTransform().scale = vec3(0.001f);
     //}
 
-    BrickMap brickMap = Voxelize(model, 10, 0.1f); //, math::Color(0xFFFFFFFF)); //octree.CreateBrickMap(0.1f);
+    BrickMap brickMap = Voxelize(model, m_Subdivisions, 0.1f);
+    //, math::Color(0xFFFFFFFF)); //octree.CreateBrickMap(0.1f);
     brickMap.PrintByteSize();
     //brickMap.PrintByteSize();
-    ObjLoader::Get().Remove(MODEL_PATH);
+    ObjLoader::Get().Remove(m_ModelPath);
 
     //octree.Clear();
 
