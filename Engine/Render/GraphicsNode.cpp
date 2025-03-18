@@ -20,7 +20,7 @@ GraphicsNode::GraphicsNode(const Mesh &mesh)
     m_VertexArray.AddBuffer(m_VertexBuffer, layout);
 
     if (s_Rasterizer.GetProgram() == 0) {
-        s_Rasterizer = std::move(Shader("shaders/rasterizer.vert", "shaders/rasterizer.frag"));
+        s_Rasterizer = ShaderManager::Get().Load("shaders/rasterizer.vert", "shaders/rasterizer.frag");
     }
 }
 

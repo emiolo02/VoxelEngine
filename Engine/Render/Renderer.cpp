@@ -40,9 +40,9 @@ struct Quad {
 Renderer::Renderer()
     : m_BrickGridBuffer(2),
       m_SolidMaskBuffer(3),
-      m_BrickTextureBuffer(4),
-      m_RaytraceBrickmap("shaders/rtBrickmap.comp"),
-      m_Blit("shaders/fullscreen.vert", "shaders/blit.frag") {
+      m_BrickTextureBuffer(4) {
+    m_Blit = ShaderManager::Get().Load("shaders/fullscreen.vert", "shaders/blit.frag");
+    m_RaytraceBrickmap = ShaderManager::Get().Load("shaders/rtBrickmap.comp");
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 

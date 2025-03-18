@@ -305,8 +305,8 @@ namespace Debug {
 		//meshProgram = ShaderResource::Instance()->CreateProgram(
 		//	"../Shaders/BasicShader.vs",
 		//	"../Shaders/BasicShader.fs");
-		lineProgram.Load("shaders/LineDraw.vert", "shaders/LineDraw.frag");
-		meshProgram.Load("shaders/rasterizer.vert", "shaders/wireframe.frag");
+		lineProgram = ShaderManager::Get().Load("shaders/LineDraw.vert", "shaders/LineDraw.frag");
+		meshProgram = ShaderManager::Get().Load("shaders/rasterizer.vert", "shaders/wireframe.frag");
 		InitLine();
 		InitBox();
 		InitPlane();

@@ -121,7 +121,7 @@ App::Run() {
     m_Inspector.AddInt("Radius", 1);
 
     m_Inspector.AddButton("Recompile shader", [&renderer] {
-        renderer.GetRaytraceShader() = Shader("shaders/rtBrickmap.comp");
+        renderer.GetRaytraceShader() = ShaderManager::Get().Load("shaders/rtBrickmap.comp");
     });
 
 
@@ -308,5 +308,6 @@ App::Run() {
 
 void
 App::Close() {
+    ShaderManager::Get().Clear();
     m_Window.Close();
 }
