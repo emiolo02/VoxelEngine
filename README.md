@@ -1,2 +1,1 @@
-# LeBoyGame
-![LeBoyGame](./img/lbg.png)
+# Voxel engine

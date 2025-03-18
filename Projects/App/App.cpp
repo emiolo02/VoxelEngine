@@ -78,7 +78,7 @@ App::Run() {
     Debug::Init();
 
 
-#define MODEL_PATH "assets/Sponza/Sponza.gltf"
+#define MODEL_PATH "assets/sponza/Sponza.gltf"
 
     auto &model = ObjLoader::Get().Load(MODEL_PATH);
     //ImageManager::Get().Save(4, "sponzatest.png");

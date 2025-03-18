@@ -66,10 +66,9 @@ void
 InitDDA(float voxelSize, inout vec3 rayStart, vec3 rayDir, vec3 invRayDir, out ivec3 currentPos, out vec3 tMax, out vec3 tDelta, out ivec3 gridStep) {
     rayStart /= voxelSize;
     currentPos = ivec3(floor(rayStart));
-    vec3 signDir = sign(rayDir);
-    gridStep = ivec3(sign(signDir));
+    gridStep = ivec3(sign(rayDir));
     tDelta = invRayDir * gridStep;
-    tMax = (signDir * (currentPos - rayStart) + (signDir * 0.5) + 0.5) * tDelta;
+    tMax = (gridStep * ((currentPos - rayStart) + 0.5) + 0.5) * tDelta;
 }
 
 void
