@@ -3,7 +3,7 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-#include "Render/Texture/Image.hpp"
+#include "Material.hpp"
 
 
 Mesh
@@ -40,34 +40,27 @@ ObjLoader::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
         a.normal = normalize(cross(edge0, edge1));
         b.normal = normalize(cross(edge0, edge1));
         c.normal = normalize(cross(edge0, edge1));
-        //if (a.normal == vec3(0)) {
-
-        //}
-        //if (b.normal == vec3(0)) {
-        //    const vec3 edge0 = a.position - b.position;
-        //    const vec3 edge1 = c.position - b.position;
-        //    b.normal = normalize(cross(edge0, edge1));
-        //}
-        //if (c.normal == vec3(0)) {
-        //    const vec3 edge0 = b.position - c.position;
-        //    const vec3 edge1 = a.position - c.position;
-        //    c.normal = normalize(cross(edge0, edge1));
-        //}
     }
 
+    Material material;
+
     aiMaterial *mat = scene->mMaterials[mesh->mMaterialIndex];
+
+    aiColor3D color;
+    mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+    material.baseColor = *(vec3 *) &color;
+
     aiString path;
     mat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-    const std::string fullPath = m_Directory + path.C_Str();
-    int32 imageId = -1;
     if (path.length > 0) {
-        imageId = ImageManager::Get().Load(fullPath).id;
+        const std::string fullPath = m_Directory + path.C_Str();
+        material.texture = TextureManager::Get().Load(fullPath);
     }
 
     return {
         vertices,
         indices,
-        imageId
+        material
     };
 }
 

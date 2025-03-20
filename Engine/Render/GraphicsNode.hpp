@@ -1,15 +1,14 @@
 #pragma once
 
 #include "Shader/Shader.hpp"
+
 #include "Vertex/VertexArray.hpp"
 #include "Vertex/VertexBuffer.hpp"
 #include "Vertex/IndexBuffer.hpp"
 
-#include "Texture/Texture.hpp"
-
 #include "Utility/Transform.hpp"
 
-struct Mesh;
+#include "Model/Model.hpp"
 
 class GraphicsNode {
 public:
@@ -31,7 +30,7 @@ private:
     VertexBuffer m_VertexBuffer;
     IndexBuffer m_IndexBuffer;
 
-    Texture m_Texture;
+    Material m_Material;
 
     Transform m_Transform;
 

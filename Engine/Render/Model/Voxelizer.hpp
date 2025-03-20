@@ -10,8 +10,14 @@ struct Mesh;
 class BrickMap;
 
 struct Triangle {
+    Triangle() = default;
+
+    Triangle(const Vertex &a, const Vertex &b, const Vertex &c, const Material *material)
+        : a(a), b(b), c(c), material(material) {
+    }
+
     Vertex a, b, c;
-    uint32 imageId;
+    const Material *material = nullptr;
 
     vec3 GetNormal() const {
         return cross(b.position - a.position, c.position - a.position);

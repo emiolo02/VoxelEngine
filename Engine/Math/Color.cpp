@@ -7,6 +7,13 @@ namespace math {
         : data(color) {
     }
 
+    Color::Color(const vec3 &color)
+        : a(255),
+          b(static_cast<uint8>(clamp(color.b, 0.0f, 1.0f) * 255.0f)),
+          g(static_cast<uint8>(clamp(color.g, 0.0f, 1.0f) * 255.0f)),
+          r(static_cast<uint8>(clamp(color.r, 0.0f, 1.0f) * 255.0f)) {
+    }
+
     //------------------------------------------------------------------------------------------
 
     Color::Color(const vec4 &color)

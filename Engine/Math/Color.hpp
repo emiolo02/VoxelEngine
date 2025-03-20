@@ -14,6 +14,8 @@ namespace math {
 
         explicit Color(uint32 color);
 
+        explicit Color(const vec3 &color);
+
         explicit Color(const vec4 &color);
 
         Color(float r, float g, float b, float a);

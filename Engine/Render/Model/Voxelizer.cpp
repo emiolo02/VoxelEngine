@@ -3,7 +3,6 @@
 #include "DataStructures/BrickMap.hpp"
 #include "Render/Debug.hpp"
 #include <thread>
-#include <Render/Texture/Image.hpp>
 
 bool
 Intersect(const math::BoundingBox &box, const Triangle &tri) {
@@ -94,15 +93,15 @@ OctreeMesh::OctreeMesh(const Mesh &mesh, const uint32 depth)
 
     math::BoundingBox rootBounds = {vec3(FLT_MAX), vec3(-FLT_MAX)};
 
-    const uint32 imageId = mesh.imageId;
+    const Material *material = &mesh.material;
 
     for (int i = 0; i < mesh.indices.size(); i += 3) {
-        const Triangle &triangle = triangles[i / 3] = {
+        const Triangle &triangle = triangles[i / 3] = Triangle(
                                        mesh.vertices[mesh.indices[i]],
                                        mesh.vertices[mesh.indices[i + 1]],
                                        mesh.vertices[mesh.indices[i + 2]],
-                                       imageId
-                                   };
+                                       material
+                                   );
 
         for (int j = 0; j < 3; ++j) {
             rootBounds.min = vec3(
@@ -147,14 +146,14 @@ OctreeMesh::OctreeMesh(const Model &model, const uint32 depth)
     math::BoundingBox rootBounds = {vec3(FLT_MAX), vec3(-FLT_MAX)};
 
     for (auto &mesh: model.meshes) {
-        const uint32 imageId = mesh.imageId;
+        const Material *material = &mesh.material;
 
         for (unsigned i = 0; i < mesh.indices.size(); i += 3) {
             const Triangle &triangle = triangles.emplace_back(
                 mesh.vertices[mesh.indices[i]],
                 mesh.vertices[mesh.indices[i + 1]],
                 mesh.vertices[mesh.indices[i + 2]],
-                imageId
+                material
             );
 
             for (unsigned j = 0; j < 3; ++j) {
@@ -193,23 +192,25 @@ OctreeMesh::Subdivide(const uint32 nodeIndex, const uint32 depth) {
         for (const auto &triangle: node.triangles) {
             float b0, b1, b2;
             if (triangle.PointInTriangle(node.boundingBox.GetCenter(), &b0, &b1, &b2)) {
-                if (triangle.imageId == -1) {
-                    node.color = math::Color(0xFFFFFFFF);
-                } else {
-                    const Image &image = ImageManager::Get().GetImage(triangle.imageId);
+                if (triangle.material->texture) {
+                    const std::shared_ptr<Image> image = TextureManager::Get().GetTextureImage(
+                        triangle.material->texture->GetId());
+
                     const vec2 uv = {
                         b0 * triangle.a.uv.x + b1 * triangle.b.uv.x + b2 * triangle.c.uv.x,
                         b0 * triangle.a.uv.y + b1 * triangle.b.uv.y + b2 * triangle.c.uv.y
                     };
 
-                    const int imagex = static_cast<int>(fract(uv.x) * image.width);
-                    const int imagey = static_cast<int>(fract(uv.y) * image.height);
-                    node.color = image.pixels[imagex + imagey * image.height];
+                    const int imagex = static_cast<int>(fract(uv.x) * image->width);
+                    const int imagey = static_cast<int>(fract(uv.y) * image->height);
+                    node.color = image->pixels[imagex + imagey * image->height];
+                } else {
+                    node.color = math::Color(triangle.material->baseColor);
                 }
                 break;
             }
         }
-        if (node.color.data == 0) node.color = math::Color(0xFFFFFFFF);
+        //if (node.color.data == 0) node.color = math::Color(0xFFFFFFFF);
 
         node.triangles.clear();
         node.triangles.shrink_to_fit();

@@ -2,7 +2,7 @@
 
 #include "GL/glew.h"
 
-#include "Image.hpp"
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 Texture::Texture(Texture &&other) noexcept {
@@ -45,78 +45,24 @@ Texture::Texture(const int32 width, const int32 height) {
 
 //------------------------------------------------------------------------------------------
 
-Texture::Texture(const std::string &path) {
-    int width, height, numChannels;
-    stbi_set_flip_vertically_on_load(true);
-    uint8 *imageData = stbi_load(path.c_str(), &width, &height, &numChannels, 0);
-    assert(imageData);
-
-    m_Width = width;
-    m_Height = height;
-    m_NumChannels = numChannels;
-
-    glGenTextures(1, &m_Id);
-    glActiveTexture(GL_TEXTURE0);
-    m_Target = GL_TEXTURE_2D;
-    glBindTexture(GL_TEXTURE_2D, m_Id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    const GLenum format = numChannels == 4 ? GL_RGBA : GL_RGB;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, format,
-                 GL_UNSIGNED_INT, imageData);
-
-    stbi_image_free(imageData);
-}
-
-//------------------------------------------------------------------------------------------
-
-Texture::Texture(const Image &image) {
-    glGenTextures(1, &m_Id);
-    m_Target = GL_TEXTURE_2D;
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_Id);
-
-    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_R, GL_ALPHA);
-    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_G, GL_BLUE);
-    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_B, GL_GREEN);
-    glTexParameteri(m_Target, GL_TEXTURE_SWIZZLE_A, GL_RED);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, image.width, image.height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, image.pixels.data());
-}
-
-//------------------------------------------------------------------------------------------
-
-Texture::Texture(const Color *colors,
+Texture::Texture(const uint8 *data,
                  const int32 width,
                  const int32 height,
-                 const int32 depth,
-                 const int32 numTextures) {
+                 const int32 numChannels)
+    : m_Width(width),
+      m_Height(height),
+      m_NumChannels(numChannels),
+      m_Target(GL_TEXTURE_2D) {
     glGenTextures(1, &m_Id);
-
-    std::cout << "Current: " << depth * numTextures << '\n';
-    std::cout << "Max: " << GL_MAX_ARRAY_TEXTURE_LAYERS << '\n';
-    m_Target = numTextures == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_ARRAY;
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(m_Target, m_Id);
-    //glTexStorage3D(m_Target, 1, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, width, height, depth * numTextures);
-    std::cout << "TexStorage\n";
-
-    //glTexSubImage3D(m_Target, 0, 0, 0, 0, width, height, depth * numTextures, GL_RGBA, GL_UNSIGNED_BYTE, colors);
-    std::cout << "TexSubImage\n";
-
     glTexParameteri(m_Target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(m_Target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(m_Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(m_Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(m_Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage3D(m_Target, 0, GL_COMPRESSED_RGB, width, height, depth * numTextures, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 colors);
+
+    const GLenum format = numChannels == 4 ? GL_RGBA : GL_RGB;
+    glTexImage2D(m_Target, 0, GL_RGBA32F, width, height, 0, format, GL_UNSIGNED_INT, data);
 }
 
 //------------------------------------------------------------------------------------------
@@ -138,4 +84,70 @@ Texture::BindTexture() const {
 void
 Texture::BindImageTexture() const {
     glBindImageTexture(0, m_Id, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+}
+
+//------------------------------------------------------------------------------------------
+
+Image::Image(const uint8 *data,
+             const int32 width,
+             const int32 height,
+             const int32 numChannels)
+    : width(width),
+      height(height),
+      numChannels(numChannels) {
+    pixels.resize(width * height);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const int index = x + y * width;
+            const uint8 alpha = numChannels == 4 ? data[index * numChannels + 3] : 255;
+
+            pixels[index] = math::Color(
+                data[index * numChannels + 0],
+                data[index * numChannels + 1],
+                data[index * numChannels + 2],
+                alpha
+            );
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------
+
+std::shared_ptr<Texture>
+TextureManager::Load(const std::string &path, const bool reload) {
+    if (m_Textures.contains(path) && !reload) {
+        return m_Textures[path];
+    }
+
+    int32 w, h, n;
+    uint8 *data = stbi_load(path.c_str(), &w, &h, &n, 0);
+    assert(data);
+
+    m_Textures[path] = std::make_shared<Texture>(data, w, h, n);
+    m_Images[m_Textures[path]->GetId()] = std::make_shared<Image>(data, w, h, n);
+    stbi_image_free(data);
+
+    return m_Textures[path];
+}
+
+//------------------------------------------------------------------------------------------
+
+std::shared_ptr<Image>
+TextureManager::GetTextureImage(const Texture &texture) {
+    if (m_Images.contains(texture.GetId())) {
+        return m_Images[texture.GetId()];
+    }
+
+    return nullptr;
+}
+
+//------------------------------------------------------------------------------------------
+
+std::shared_ptr<Image>
+TextureManager::GetTextureImage(const TextureId texture) {
+    if (m_Images.contains(texture)) {
+        return m_Images[texture];
+    }
+
+    return nullptr;
 }

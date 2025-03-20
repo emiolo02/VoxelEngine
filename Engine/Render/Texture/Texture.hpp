@@ -1,57 +1,66 @@
 #pragma once
 
+#include "Math/Color.hpp"
+
 struct Image;
-struct Color;
+
+typedef uint32 TextureId;
+
+//------------------------------------------------------------------------------------------
 
 class Texture {
 public:
-  Texture() = default;
+    Texture() = default;
 
-  Texture(Texture &&other) noexcept;
+    Texture(Texture &&other) noexcept;
 
-  Texture &operator=(Texture &&other) noexcept;
+    Texture &operator=(Texture &&other) noexcept;
 
-  Texture(int32 width, int32 height);
+    Texture(int32 width, int32 height);
 
-  explicit Texture(const std::string &path);
+    Texture(const uint8 *data, int32 width, int32 height, int32 numChannels);
 
-  explicit Texture(const Image &image);
+    ~Texture();
 
-  Texture(const Color *colors, int32 width, int32 height, int32 depth, int32 numTextures = 1);
+    void BindTexture() const;
 
-  ~Texture();
+    void BindImageTexture() const;
 
-  void BindTexture() const;
+    TextureId GetId() const { return m_Id; }
 
-  void BindImageTexture() const;
-
-  uint32 GetId() const { return m_Id; }
-
-  int32 GetWidth() const { return m_Width; }
-  int32 GetHeight() const { return m_Height; }
+    int32 GetWidth() const { return m_Width; }
+    int32 GetHeight() const { return m_Height; }
 
 private:
-  uint32 m_Id = 0;
-  int32 m_Width = 0;
-  int32 m_Height = 0;
-  int32 m_NumChannels = 0;
-  uint32 m_Target = 0;
+    TextureId m_Id = 0;
+    int32 m_Width = 0, m_Height = 0, m_NumChannels = 0;
+    uint32 m_Target = 0;
 };
 
-class Texture3D {
+//------------------------------------------------------------------------------------------
+
+struct Image {
+    Image() = default;
+
+    Image(const uint8 *data, int32 width, int32 height, int32 numChannels);
+
+    std::vector<math::Color> pixels;
+    int32 width = 0, height = 0, numChannels = 0;
+};
+
+//------------------------------------------------------------------------------------------
+
+class TextureManager {
+    SINGLETON(TextureManager)
+
 public:
-  Texture3D() = default;
+    std::shared_ptr<Texture> Load(const std::string &path, bool reload = false);
 
-  Texture3D(const Color *colors, size_t size, size_t numTextures);
+    std::shared_ptr<Image> GetTextureImage(const Texture &texture);
 
-  ~Texture3D();
-
-  void BindTexture() const;
-
-  void BindImageTexture() const;
-
-  uint32 GetId() const { return m_Id; }
+    std::shared_ptr<Image> GetTextureImage(TextureId texture);
 
 private:
-  uint32 m_Id = 0;
+    std::unordered_map<std::string, std::shared_ptr<Texture> > m_Textures;
+    std::unordered_map<TextureId, std::shared_ptr<Image> > m_Images;
 };

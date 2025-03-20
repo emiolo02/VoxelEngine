@@ -22,8 +22,6 @@
 #include "Render/Model/Voxelizer.hpp"
 #include "Render/Debug.hpp"
 
-#include "Render/Texture/Image.hpp"
-
 bool
 App::Open() {
     m_Window = Display::Window();

@@ -3,8 +3,6 @@
 #include "GL/glew.h"
 
 #include "Camera.hpp"
-#include "Model/Model.hpp"
-#include "Texture/Image.hpp"
 #include "Vertex/VertexBufferLayout.hpp"
 
 Shader GraphicsNode::s_Rasterizer;
@@ -12,7 +10,7 @@ Shader GraphicsNode::s_Rasterizer;
 GraphicsNode::GraphicsNode(const Mesh &mesh)
     : m_VertexBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)),
       m_IndexBuffer(mesh.indices.data(), mesh.indices.size()),
-      m_Texture(ImageManager::Get().GetImage(mesh.imageId)) {
+      m_Material(mesh.material) {
     VertexBufferLayout layout;
     layout.Push<float>(3);
     layout.Push<float>(3);
@@ -31,7 +29,9 @@ GraphicsNode::Draw() const {
     s_Rasterizer.SetValue("projView", Camera::GetMainCamera()->GetProjView());
     s_Rasterizer.SetValue("model", m_Transform.GetMatrix());
 
-    m_Texture.BindTexture();
+    if (m_Material.texture) {
+        m_Material.texture->BindTexture();
+    }
 
     m_VertexArray.Bind();
     m_VertexBuffer.Bind();
