@@ -30,8 +30,7 @@ public:
 
     Camera *GetCamera() { return &m_Camera; }
 
-    // TEMPORARY
-    inline Movement &GetMovement() { return m_Movement; }
+    Movement &GetMovement() { return m_Movement; }
 
 private:
     Camera m_Camera;

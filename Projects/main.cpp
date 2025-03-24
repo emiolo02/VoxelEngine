@@ -4,7 +4,7 @@ int
 main(int argc, char *argv[]) {
   string modelPath;
   uint32 subdivisions = 0;
-  if (argc != 2) {
+  if (argc != 3) {
     std::cout << "Required command line arguments are:\n" <<
         "\t1. Path to a 3D model, this project uses *assimp* for model loading, thus almost any format should work.\n"
         <<
@@ -15,8 +15,8 @@ main(int argc, char *argv[]) {
     std::cout << "\n Enter number of subdivisions:\n";
     std::cin >> subdivisions;
   } else {
-    modelPath = argv[0];
-    subdivisions = std::stoi(argv[1]);
+    modelPath = argv[1];
+    subdivisions = std::stoi(argv[2]);
   }
 
 

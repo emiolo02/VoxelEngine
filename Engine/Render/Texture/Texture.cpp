@@ -62,7 +62,7 @@ Texture::Texture(const uint8 *data,
     glTexParameteri(m_Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     const GLenum format = numChannels == 4 ? GL_RGBA : GL_RGB;
-    glTexImage2D(m_Target, 0, GL_RGBA32F, width, height, 0, format, GL_UNSIGNED_INT, data);
+    glTexImage2D(m_Target, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 }
 
 //------------------------------------------------------------------------------------------

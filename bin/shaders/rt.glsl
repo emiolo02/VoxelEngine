@@ -1,4 +1,4 @@
-#define CORRECTION 0.00001
+#define CORRECTION 0.0001
 
 struct Ray {
     vec3 origin;

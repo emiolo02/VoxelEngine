@@ -11,6 +11,7 @@
 
 ## Demonstration
 
+![Example video](docs/Voxel_Showcase.mp4)
 ![Voxelized stanford dragon](docs/color.png)
 ![Voxelized stanford dragon ray marching steps](docs/steps.png)
 

@@ -54,6 +54,13 @@ public:
         m_Vec3s[name] = v;
     }
 
+    vec3 GetVec3(const string &name) {
+        if (m_Vec3s.contains(name)) {
+            return m_Vec3s[name];
+        }
+        return {};
+    }
+
     void AddVec4(const string &name, const vec4 &v) {
         m_Vec4s[name] = v;
     }

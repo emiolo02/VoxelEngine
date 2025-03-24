@@ -122,7 +122,6 @@ App::Run() {
         renderer.GetRaytraceShader() = ShaderManager::Get().Load("shaders/rtBrickmap.comp");
     });
 
-
     float deltaSeconds = 0.0f;
     glfwSwapInterval(1);
 
@@ -277,8 +276,8 @@ App::Run() {
         }
 
         // Cursor
-        //Debug::DrawBox(firstPersonCamera.GetPosition() + firstPersonCamera.GetForward(), {}, vec3(0.001f), vec4(1.0f),
-        //               2);
+        Debug::DrawBox(firstPersonCamera.GetPosition() + firstPersonCamera.GetForward(), {}, vec3(0.001f), vec4(1.0f),
+                       2);
 
         //-----------------
         glEnable(GL_DEPTH_TEST);
